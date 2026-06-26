@@ -1,0 +1,75 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Elm Webapp Template</title>
+    <meta name='wot-verification' content='5cb29ec02479d36e6dbc' />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Elm Webapp Template" />
+    <meta property="og:description" content="Elm Webapp Template" />
+    <meta property="og:url" content="http://localhost:8000/site/index.html" />
+    <meta property="og:site_name" content="Elm Webapp Template" />
+    <meta property="og:image" content="http://localhost:8000/site/images/icon-512.png"/>
+    <meta property="og:image:width" content="360" />
+    <meta property="og:image:height" content="360" />
+    <link href='/images/icon-180.png' rel='apple-touch-icon' sizes='180x180' >
+    <link rel="manifest" href="manifest.webmanifest" >
+    <script type='text/javascript' src='worker.js'></script>
+    <script type='text/javascript' src='elm.js'></script>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  </head>
+  <body style='width: 40em; margin: auto; margin-top: 2em;'>
+    <noscript>
+      <h2 style='text-align: center;'>Elm Webapp Template</h2>
+      <p>Elm Webapp Template is a template for webapps written in Elm.</p>
+      <p style='font-color: red;'>
+        <b>Elm Webapp Template requires JavaScript to function. Without JavaScript,
+          this page is all you'll ever see.</b>
+      </p>
+      <p style='text-align: center;'>
+        <img src='images/icon-512.png' width='360' height='360' alt='Elm Webapp Template'/>
+      </p>
+      <p style='text-align: center;'>
+        <a href='https://github.com/billstclair/elm-webapp-template'>GitHub</a>
+      </p>
+    </noscript>
+    <script type='text/javascript'>
+      // It's an application, so it doesn't need a div.
+      if (typeof Elm !== 'undefined') {
+        var elm = Elm;
+        if (!elm) {
+          console.log("elm.js does not define the symbol 'Elm'.");
+        } else {
+          var app = elm['Main'];
+          if (!app) {
+            console.log("Elm.Main.app is not defined.");
+          } else {
+            app = app.init({ flags: true });
+
+            // Ports
+            // A couple of representative port definitions.
+            // Add your own here.
+            // port selectAll : String -> Cmd msg
+            var selectAll = app && app.ports && app.ports.selectAll;
+            if (selectAll) {
+              selectAll.subscribe(function(id) {
+                let element = document.getElementById(id);
+                if (element) {
+                  element.select();
+                }
+              });
+            }
+            // port openWindow : Value -> Cmd msg
+            var openWindow = app && app.ports && app.ports.openWindow;
+            if (openWindow) {
+              openWindow.subscribe(function(url) {
+                window.open(url, '_blank');
+              });
+            }
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

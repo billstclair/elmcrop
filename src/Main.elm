@@ -1,0 +1,188 @@
+---------------------------------------------------------------
+--
+-- Main.elm
+-- elm-webapp-template - Template for Elm webapps.
+-- Copyright (c) 2026 Bill St. Clair <billstclair@gmail.com>
+-- Some rights reserved.
+-- Distributed under the MIT License
+-- See LICENSE
+--
+----------------------------------------------------------------------
+
+
+port module Main exposing (main)
+
+--
+
+import Browser exposing (Document, UrlRequest(..))
+import Browser.Dom as Dom
+import Browser.Navigation as Navigation exposing (Key)
+import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
+import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
+import Html.Attributes exposing (align, checked, disabled, height, href, id, name, size, src, style, type_, value, width)
+import Html.Events exposing (onClick, onFocus, onInput)
+import Json.Encode as JE exposing (Value)
+import Task exposing (Task)
+import Time exposing (Posix)
+import Url exposing (Url)
+
+
+port selectAll : String -> Cmd msg
+
+
+port openWindow : Value -> Cmd msg
+
+
+main =
+    Browser.application
+        { init = init
+        , onUrlRequest = OnUrlRequest
+        , onUrlChange = OnUrlChange
+        , subscriptions = subscriptions
+        , update = update
+        , view = view
+        }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Time.every 1000 RecordTime
+
+
+type alias Model =
+    { now : Posix
+    , url : Url
+    , key : Key
+    }
+
+
+type Msg
+    = Nop
+    | OnUrlRequest UrlRequest
+    | OnUrlChange Url
+    | ReloadFromServer
+    | RecordTime Posix
+
+
+init : Value -> Url -> Key -> ( Model, Cmd Msg )
+init flags url key =
+    { now = Time.millisToPosix 0
+    , url = url
+    , key = key
+    }
+        |> withCmd (Task.perform RecordTime Time.now)
+
+
+h1 : String -> Html msg
+h1 string =
+    Html.h1 [] [ text string ]
+
+
+b : String -> Html msg
+b string =
+    Html.b []
+        [ Html.text string ]
+
+
+br : Html msg
+br =
+    Html.br [] []
+
+
+view : Model -> Document Msg
+view model =
+    { title = "Elm Webapp Template"
+    , body =
+        [ div
+            [ style "margin" "10px"
+            , style "height" "90%"
+            ]
+            [ h1 "Elm Webapp Template"
+            , p []
+                [ img
+                    [ src "images/icon-192.png"
+                    , width 192
+                    , height 192
+                    ]
+                    []
+                ]
+            , p []
+                [ a
+                    [ href "#"
+                    , onClick ReloadFromServer
+                    ]
+                    [ text "Reload from Server" ]
+                ]
+            , p []
+                [ text chars.copyright
+                , text "Copyright 2026, Bill St. Clair"
+                , br
+                , a [ href "https://github.com/billstclair/elm-webapp-template" ]
+                    [ text "GitHub" ]
+                ]
+            ]
+        ]
+    }
+
+
+codestr code =
+    String.fromList [ Char.fromCode code ]
+
+
+chars =
+    { leftCurlyQuote = codestr 0x201C
+    , copyright = codestr 0xA9
+    , nbsp = codestr 0xA0
+    }
+
+
+addPointZero : String -> String
+addPointZero string =
+    if String.contains "." string then
+        string
+
+    else
+        string ++ ".0"
+
+
+addZero : String -> String
+addZero string =
+    if string == "" then
+        "0"
+
+    else if String.left 1 string == "0" then
+        addZero <| String.dropLeft 1 string
+
+    else
+        string
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Nop ->
+            model |> withNoCmd
+
+        RecordTime posix ->
+            let
+                now =
+                    Time.posixToMillis posix
+            in
+            { model
+                | now = posix
+            }
+                |> withNoCmd
+
+        OnUrlChange url ->
+            model |> withNoCmd
+
+        OnUrlRequest urlRequest ->
+            case urlRequest of
+                External url ->
+                    model |> withCmd (openWindow <| JE.string url)
+
+                Internal url ->
+                    model |> withNoCmd
+
+        ReloadFromServer ->
+            model |> withCmd Navigation.reloadAndSkipCache
