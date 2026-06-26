@@ -1,9 +1,9 @@
 {
-  "short_name": "elm-webapp-template",
-  "name": "Elm Webapp Template",
+  "short_name": "elmcrop",
+  "name": "Elm Crop",
   "orientation": "portrait",
   "id" : "/",
-  "description": "Template for webapps written in Elm.",
+  "description": "A clone of EasyCrop.",
   "icons": [
     {
       "src": "/images/icon-192.png",
