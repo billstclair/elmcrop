@@ -1,7 +1,7 @@
 ---------------------------------------------------------------
 --
 -- Main.elm
--- elm-webapp-template - Template for Elm webapps.
+-- elmcrop - Clone of EasyCrop, in Elm on the web.
 -- Copyright (c) 2026 Bill St. Clair <billstclair@gmail.com>
 -- Some rights reserved.
 -- Distributed under the MIT License
@@ -91,13 +91,13 @@ br =
 
 view : Model -> Document Msg
 view model =
-    { title = "Elm Webapp Template"
+    { title = "ElmCrop"
     , body =
         [ div
             [ style "margin" "10px"
             , style "height" "90%"
             ]
-            [ h1 "Elm Webapp Template"
+            [ h1 "ElmCrop"
             , p []
                 [ img
                     [ src "images/icon-192.png"
@@ -117,7 +117,7 @@ view model =
                 [ text chars.copyright
                 , text "Copyright 2026, Bill St. Clair"
                 , br
-                , a [ href "https://github.com/billstclair/elm-webapp-template" ]
+                , a [ href "https://github.com/billstclair/elmcrop" ]
                     [ text "GitHub" ]
                 ]
             ]

@@ -5778,7 +5778,7 @@ var $author$project$Main$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						$author$project$Main$h1('Elm Webapp Template'),
+						$author$project$Main$h1('ElmCrop'),
 						A2(
 						$elm$html$Html$p,
 						_List_Nil,
@@ -5823,7 +5823,7 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$a,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$href('https://github.com/billstclair/elm-webapp-template')
+										$elm$html$Html$Attributes$href('https://github.com/billstclair/elmcrop')
 									]),
 								_List_fromArray(
 									[
@@ -5832,7 +5832,7 @@ var $author$project$Main$view = function (model) {
 							]))
 					]))
 			]),
-		title: 'Elm Webapp Template'
+		title: 'ElmCrop'
 	};
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
