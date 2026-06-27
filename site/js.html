@@ -1,0 +1,26 @@
+<!--
+    Playground for JavaScript code.
+  -->
+
+<html>
+  <head>
+    <title>js.html</title>
+  </head>
+  <body>
+    <h1>js.html</h1>
+    <h2>Playground for JavaScript learning.</h2>
+     <div id="drophere" style='width: 200; height: 200; border: 2px solid green;'>
+      <p>A paragraph inside the drop div.</p>
+     </div>
+     <script>
+       const drophere = document.getElementById('drophere');
+       drophere.addEventListener('dragover', (ev) => {
+         ev.preventDefault();
+       });
+       drophere.addEventListener('drop', (ev) => {
+         ev.preventDefault();
+         console.log('ev: ', ev);
+       });
+     </script>
+  </body>
+</html>
