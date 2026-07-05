@@ -1,3 +1,4 @@
+
 <!--
     Playground for JavaScript code.
   -->
@@ -14,14 +15,26 @@
          A drop <code>div</code>
        </div>
      </div>
+    <textarea rows='5' cols='30' id='dropreport'>
+    </textarea>
      <script>
        const drophere = document.getElementById('drophere');
+       const dropreport = document.getElementById('dropreport');
+       var dropevent = null;
        drophere.addEventListener('dragover', (ev) => {
          ev.preventDefault();
        });
        drophere.addEventListener('drop', (ev) => {
          ev.preventDefault();
-         console.log('ev: ', ev);
+         dropevent = ev;
+         console.log(ev);
+         dropreport.value = ev.dataTransfer.items;
+         dropreport.value = ev.dataTransfer.types;
+         if (ev.dataTransfer.items) {
+           for (const item of ev.dataTransfer.items) {
+             console.log(`kind = ${item.kind}, type = ${item.type}`);
+           }
+         };
        });
      </script>
      <p><a href='https://github.com/billstclair/elmcrop'>GitHub</a></p>
