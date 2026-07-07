@@ -1,6 +1,6 @@
 {
   "short_name": "elmcrop",
-  "name": "Elm Crop",
+  "name": "ElmCrop",
   "orientation": "portrait",
   "id" : "/",
   "description": "A clone of EasyCrop.",
