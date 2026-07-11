@@ -21,4 +21,4 @@ To upload to the directory specified by `site/.sshdir`:
     $ cd .../elmcrop
     $ bin/update-site
     
-Requires `rsyncit` from  [wws-scripts](http://github.com/billstclair/wws-scripts) to be in the `PATH`, and `.sshdir` to point to a directory you can upload to with `rsync`.
+Requires `rsyncit` from  [wws-scripts](http://github.com/billstclair/wws-scripts) to be in the `PATH`, and `site/.sshdir` to point to a directory you can upload to with `rsync`.
