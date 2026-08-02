@@ -1,7 +1,7 @@
 ---------------------------------------------------------------
 --
 -- Main.elm
--- elmcrop - Clone of EasyCrop, in Elm on the web.
+-- elmcrop - Clone of EasyCrop, in Elm, on the web.
 -- Copyright (c) 2026 Bill St. Clair <billstclair@gmail.com>
 -- Some rights reserved.
 -- Distributed under the MIT License
@@ -94,18 +94,24 @@ view model =
     { title = "ElmCrop"
     , body =
         [ div
-            [ style "margin" "10px"
-            , style "height" "90%"
+            [ style "width" "100%"
             ]
-            [ h1 "ElmCrop"
-            , p []
-                [ img
-                    [ src "images/icon-192.png"
-                    , width 192
-                    , height 192
-                    ]
-                    []
+            (menubar model)
+        , table
+            [ style "width" "100%" ]
+            -- TODO
+            [ tr [ style "width" "100%" ]
+                [ td [ style "width" "47%" ]
+                    -- TODO
+                    [ text "Left column" ]
+                , td [ style "width" "6%" ]
+                    -- TODO
+                    [ text " " ]
+                , td [ style "width" "47%" ]
+                    -- TODO
+                    [ text "Right column" ]
                 ]
+            , br
             , p []
                 [ a
                     [ href "#"
@@ -123,6 +129,11 @@ view model =
             ]
         ]
     }
+
+
+menubar : Model -> List (Html Msg)
+menubar model =
+    [ text "menubar" ]
 
 
 codestr code =
