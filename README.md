@@ -1,6 +1,6 @@
 ElmCrop
 
-A clone of YelloMug Software's defunct EasyCrop app.
+A clone of YellowMug Software's defunct EasyCrop app.
 
 For development:
 
