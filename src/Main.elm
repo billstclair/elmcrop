@@ -95,6 +95,7 @@ view model =
     , body =
         [ div
             [ style "width" "100%"
+            , id "menubar"
             ]
             (menubar model)
         , table
@@ -103,32 +104,44 @@ view model =
             [ tr [ style "width" "100%" ]
                 [ td [ style "width" "47%" ]
                     -- TODO
-                    [ text "Left column" ]
+                    [ viewLeftColumn model ]
                 , td [ style "width" "6%" ]
                     -- TODO
                     [ text " " ]
                 , td [ style "width" "47%" ]
                     -- TODO
-                    [ text "Right column" ]
+                    [ viewRightColumn model ]
                 ]
-            , br
-            , p []
-                [ a
-                    [ href "#"
-                    , onClick ReloadFromServer
+            , div [ id "footer" ]
+                [ br
+                , p []
+                    [ a
+                        [ href "#"
+                        , onClick ReloadFromServer
+                        ]
+                        [ text "Reload from Server" ]
                     ]
-                    [ text "Reload from Server" ]
-                ]
-            , p []
-                [ text chars.copyright
-                , text "Copyright 2026, Bill St. Clair"
-                , br
-                , a [ href "https://github.com/billstclair/elmcrop" ]
-                    [ text "GitHub" ]
+                , p []
+                    [ text chars.copyright
+                    , text "Copyright 2026, Bill St. Clair"
+                    , br
+                    , a [ href "https://github.com/billstclair/elmcrop" ]
+                        [ text "GitHub" ]
+                    ]
                 ]
             ]
         ]
     }
+
+
+viewLeftColumn : Model -> Html Msg
+viewLeftColumn model =
+    text "Left column"
+
+
+viewRightColumn : Model -> Html Msg
+viewRightColumn model =
+    text "Right column"
 
 
 menubar : Model -> List (Html Msg)
