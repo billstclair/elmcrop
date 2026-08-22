@@ -108,13 +108,18 @@ view model =
                 [ style "width" "100%"
                 ]
                 [ td
-                    [ style "width" "50%"
+                    [ style "width" "49%"
                     , style "padding" "0"
                     ]
                     -- TODO
                     [ viewLeftColumn model ]
                 , td
-                    [ style "width" "50%"
+                    [ style "width" "2%"
+                    , style "padding" "0"
+                    ]
+                    [ text "" ]
+                , td
+                    [ style "width" "49%"
                     , style "padding" "0"
                     ]
                     -- TODO
