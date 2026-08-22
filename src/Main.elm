@@ -99,16 +99,24 @@ view model =
             ]
             (menubar model)
         , table
-            [ style "width" "100%" ]
+            [ style "width" "100%"
+            , style "border-collapse" "separate"
+            , style "border-spacing" "0px 0px"
+            ]
             -- TODO
-            [ tr [ style "width" "100%" ]
-                [ td [ style "width" "47%" ]
+            [ tr
+                [ style "width" "100%"
+                ]
+                [ td
+                    [ style "width" "50%"
+                    , style "padding" "0"
+                    ]
                     -- TODO
                     [ viewLeftColumn model ]
-                , td [ style "width" "6%" ]
-                    -- TODO
-                    [ text " " ]
-                , td [ style "width" "47%" ]
+                , td
+                    [ style "width" "50%"
+                    , style "padding" "0"
+                    ]
                     -- TODO
                     [ viewRightColumn model ]
                 ]
@@ -136,12 +144,28 @@ view model =
 
 viewLeftColumn : Model -> Html Msg
 viewLeftColumn model =
-    text "Left column"
+    div [ style "height" "256px" ]
+        [ text "Drop picture here"
+        , div
+            [ style "width" "100%"
+            , style "height" "100%"
+            , style "background-color" "red"
+            ]
+            []
+        ]
 
 
 viewRightColumn : Model -> Html Msg
 viewRightColumn model =
-    text "Right column"
+    div [ style "height" "256px" ]
+        [ text "Drag this off"
+        , div
+            [ style "width" "100%"
+            , style "height" "100%"
+            , style "background-color" "blue"
+            ]
+            []
+        ]
 
 
 menubar : Model -> List (Html Msg)
