@@ -21,6 +21,8 @@ import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes exposing (align, checked, disabled, height, href, id, name, size, src, style, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
+import Json.Decode as JD exposing (Decoder)
+import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
 import Task exposing (Task)
 import Time exposing (Posix)
@@ -57,6 +59,9 @@ type alias Model =
     { now : Posix
     , url : Url
     , key : Key
+
+    -- Persistent below here
+    , windowSize : Pair
     }
 
 
@@ -73,6 +78,7 @@ init flags url key =
     { now = Time.millisToPosix 0
     , url = url
     , key = key
+    , windowSize = { width = 840, height = 550 }
     }
         |> withCmd (Task.perform RecordTime Time.now)
 
@@ -236,3 +242,63 @@ update msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+
+-- Persistence
+
+
+type alias Pair =
+    { width : Float
+    , height : Float
+    }
+
+
+type alias SavedModel =
+    { windowSize : Pair
+    }
+
+
+modelToSavedModel : Model -> SavedModel
+modelToSavedModel model =
+    { windowSize = model.windowSize
+    }
+
+
+savedModelToModel : SavedModel -> Model -> Model
+savedModelToModel savedModel model =
+    { model
+        | windowSize = savedModel.windowSize
+    }
+
+
+
+-- encoders/decoders
+
+
+encodePair : Pair -> Value
+encodePair pair =
+    JE.object
+        [ ( "width", JE.float pair.width )
+        , ( "height", JE.float pair.height )
+        ]
+
+
+pairDecoder : Decoder Pair
+pairDecoder =
+    JD.succeed Pair
+        |> required "width" JD.float
+        |> required "height" JD.float
+
+
+encodeSavedModel : SavedModel -> Value
+encodeSavedModel savedModel =
+    JE.object
+        [ ( "windowSize", encodePair savedModel.windowSize )
+        ]
+
+
+savedModelDecoder : Decoder SavedModel
+savedModelDecoder =
+    JD.succeed SavedModel
+        |> required "windowSize" pairDecoder
