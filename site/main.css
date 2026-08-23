@@ -1,0 +1,11 @@
+/* Maybe this should have a class,
+   but there's only one table in the app.
+*/
+table {
+    border-collapse: separate;
+    border-spacing: 0px 0px;
+}
+
+td {
+    padding: 0;
+}
