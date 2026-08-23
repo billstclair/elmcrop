@@ -122,22 +122,22 @@ view model =
                     ]
                     [ viewRightColumn model ]
                 ]
-            , div [ id "footer" ]
-                [ br
-                , p []
-                    [ a
-                        [ href "#"
-                        , onClick ReloadFromServer
-                        ]
-                        [ text "Reload from Server" ]
+            ]
+        , div [ id "footer" ]
+            [ br
+            , p []
+                [ a
+                    [ href "#"
+                    , onClick ReloadFromServer
                     ]
-                , p []
-                    [ text chars.copyright
-                    , text "Copyright 2026, Bill St. Clair"
-                    , br
-                    , a [ href "https://github.com/billstclair/elmcrop" ]
-                        [ text "GitHub" ]
-                    ]
+                    [ text "Reload from Server" ]
+                ]
+            , p []
+                [ text chars.copyright
+                , text "Copyright 2026, Bill St. Clair"
+                , br
+                , a [ href "https://github.com/billstclair/elmcrop" ]
+                    [ text "GitHub" ]
                 ]
             ]
         ]
