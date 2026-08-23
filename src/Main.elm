@@ -100,8 +100,6 @@ view model =
             (menubar model)
         , table
             [ style "width" "100%"
-            , style "border-collapse" "separate"
-            , style "border-spacing" "0px 0px"
             ]
             -- TODO
             [ tr
@@ -109,20 +107,15 @@ view model =
                 ]
                 [ td
                     [ style "width" "49%"
-                    , style "padding" "0"
                     ]
-                    -- TODO
                     [ viewLeftColumn model ]
                 , td
                     [ style "width" "2%"
-                    , style "padding" "0"
                     ]
                     [ text "" ]
                 , td
                     [ style "width" "49%"
-                    , style "padding" "0"
                     ]
-                    -- TODO
                     [ viewRightColumn model ]
                 ]
             , div [ id "footer" ]
