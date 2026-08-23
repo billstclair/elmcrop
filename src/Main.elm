@@ -49,6 +49,10 @@ subscriptions model =
     Time.every 1000 RecordTime
 
 
+
+-- standard window size: 840x550
+
+
 type alias Model =
     { now : Posix
     , url : Url
