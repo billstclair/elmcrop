@@ -15,6 +15,7 @@
     <link rel="stylesheet" type="text/css" href="main.css">
     <link href='/images/icon-180.png' rel='apple-touch-icon' sizes='180x180' >
     <link rel="manifest" href="manifest.webmanifest" >
+    <script type='text/javascript' src='js/localstorage.js'></script>
     <script type='text/javascript' src='worker.js'></script>
     <script type='text/javascript' src='elm.js'></script>
     <meta name="mobile-web-app-capable" content="yes">
@@ -47,6 +48,8 @@
             console.log("Elm.Main.app is not defined.");
           } else {
             app = app.init({ flags: true });
+
+            localstorage(app);
 
             // Ports
             // A couple of representative port definitions.
