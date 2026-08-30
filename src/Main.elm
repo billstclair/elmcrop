@@ -24,6 +24,7 @@ import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
+import LocalStorage exposing (Command, GetOrPut(..), localStorageIn, localStorageOut)
 import Task exposing (Task)
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -48,7 +49,10 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every 1000 RecordTime
+    [ Time.every 1000 RecordTime
+    , localStorageOut ReceiveLocalStorage
+    ]
+        |> Sub.batch
 
 
 
@@ -71,6 +75,7 @@ type Msg
     | OnUrlChange Url
     | ReloadFromServer
     | RecordTime Posix
+    | ReceiveLocalStorage Value
 
 
 init : Value -> Url -> Key -> ( Model, Cmd Msg )
@@ -80,7 +85,10 @@ init flags url key =
     , key = key
     , windowSize = { width = 840, height = 550 }
     }
-        |> withCmd (Task.perform RecordTime Time.now)
+        |> withCmds
+            [ Task.perform RecordTime Time.now
+            , LocalStorage.get "" "model"
+            ]
 
 
 h1 : String -> Html msg
@@ -229,6 +237,9 @@ update msg model =
             }
                 |> withNoCmd
 
+        ReceiveLocalStorage value ->
+            receiveLocalStorage (Debug.log "receiveLocalStorage, value" value) model
+
         OnUrlChange url ->
             model |> withNoCmd
 
@@ -242,6 +253,12 @@ update msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+receiveLocalStorage : Value -> Model -> ( Model, Cmd Msg )
+receiveLocalStorage value model =
+    -- Todo
+    model |> withNoCmd
 
 
 
