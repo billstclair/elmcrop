@@ -14,7 +14,7 @@
   var prefix = "";
 
 
-  function localstorage(app) {
+  function initLocalStorage(app) {
     if (!app) {
       console.log("app is not defined.");
       return;
@@ -64,5 +64,5 @@
     })
   };
 
-  scope.localstorage = localstorage;
+  scope.initLocalStorage = initLocalStorage;
 })(this);   // Execute the enclosing function

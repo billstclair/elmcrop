@@ -14,6 +14,7 @@ port module LocalStorage exposing
     ( Command
     , GetOrPut(..)
     , commandDecoder
+    , decodeCommand
     , encodeCommand
     , get
     , getLabeled
@@ -138,6 +139,11 @@ getOrPutDecoder =
                 else
                     JD.fail "Not get or put"
             )
+
+
+decodeCommand : Value -> Result JD.Error Command
+decodeCommand value =
+    JD.decodeValue commandDecoder value
 
 
 {-| Send a `Command` over from Elm.

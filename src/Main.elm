@@ -24,7 +24,7 @@ import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
-import LocalStorage exposing (Command, GetOrPut(..), localStorageIn, localStorageOut)
+import LocalStorage exposing (Command, GetOrPut(..), localStorageOut)
 import Task exposing (Task)
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -279,7 +279,45 @@ update msg model =
 
 receiveLocalStorage : Model -> Value -> ( Model, Cmd Msg )
 receiveLocalStorage model value =
-    -- Todo
+    case LocalStorage.decodeCommand value of
+        Err err ->
+            let
+                errString =
+                    Debug.log "LocalStorage error: " <| JD.errorToString err
+            in
+            model |> withNoCmd
+
+        Ok command ->
+            case command.getOrPut of
+                SetPrefix ->
+                    model |> withCmd (LocalStorage.get "model")
+
+                Get ->
+                    if command.key == "model" then
+                        receiveModel command.value model
+
+                    else
+                        receiveValue command.key command.value model
+
+                _ ->
+                    model |> withNoCmd
+
+
+receiveModel : Value -> Model -> ( Model, Cmd Msg )
+receiveModel value model =
+    let
+        json =
+            Debug.log "receiveModel" <| JE.encode 0 value
+    in
+    model |> withNoCmd
+
+
+receiveValue : String -> Value -> Model -> ( Model, Cmd Msg )
+receiveValue key value model =
+    let
+        json =
+            Debug.log ("receiveValue \"" ++ key ++ "\"") <| JE.encode 0 value
+    in
     model |> withNoCmd
 
 
