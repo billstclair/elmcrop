@@ -16,9 +16,11 @@ port module LocalStorage exposing
     , commandDecoder
     , encodeCommand
     , get
+    , getLabeled
     , localStorageIn
     , localStorageOut
     , put
+    , putLabeled
     , setPrefix
     )
 
