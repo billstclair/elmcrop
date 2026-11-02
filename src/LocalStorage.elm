@@ -33,26 +33,39 @@ type GetOrPut
 
 type alias Command =
     { getOrPut : GetOrPut
+    , key : String
     , label : String
-    , val : Value
+    , value : Value
     }
 
 
-get : String -> String -> Cmd msg
-get label key =
+get : String -> Cmd msg
+get key =
+    getLabeled key ""
+
+
+getLabeled : String -> String -> Cmd msg
+getLabeled key label =
     { getOrPut = Get
+    , key = key
     , label = label
-    , val = JE.string key
+    , value = JE.null
     }
         |> encodeCommand
         |> localStorageIn
 
 
 put : String -> Value -> Cmd msg
-put label value =
+put key value =
+    putLabeled key "" value
+
+
+putLabeled : String -> String -> Value -> Cmd msg
+putLabeled key label value =
     { getOrPut = Put
+    , key = key
     , label = label
-    , val = value
+    , value = value
     }
         |> encodeCommand
         |> localStorageIn
@@ -60,6 +73,10 @@ put label value =
 
 encodeCommand : Command -> Value
 encodeCommand command =
+    let
+        cmd =
+            Debug.log "LocalStorage send" command
+    in
     JE.object
         [ ( "getOrPut"
           , JE.string
@@ -71,8 +88,9 @@ encodeCommand command =
                         "put"
                 )
           )
+        , ( "key", JE.string command.key )
         , ( "label", JE.string command.label )
-        , ( "val", command.val )
+        , ( "value", command.value )
         ]
 
 
@@ -80,8 +98,9 @@ commandDecoder : Decoder Command
 commandDecoder =
     JD.succeed Command
         |> required "getOrPut" getOrPutDecoder
+        |> required "key" JD.string
         |> required "label" JD.string
-        |> required "val" JD.value
+        |> optional "value" JD.value JE.null
 
 
 getOrPutDecoder : Decoder GetOrPut
@@ -89,14 +108,14 @@ getOrPutDecoder =
     JD.string
         |> JD.andThen
             (\s ->
-                if s == "Get" then
+                if s == "get" then
                     JD.succeed Get
 
-                else if s == "Put" then
+                else if s == "put" then
                     JD.succeed Put
 
                 else
-                    JD.fail "Not Get or Put"
+                    JD.fail "Not get or put"
             )
 
 

@@ -19,7 +19,7 @@ import Browser.Dom as Dom
 import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
-import Html.Attributes exposing (align, checked, disabled, height, href, id, name, size, src, style, type_, value, width)
+import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
@@ -87,7 +87,7 @@ init flags url key =
     }
         |> withCmds
             [ Task.perform RecordTime Time.now
-            , LocalStorage.get "" "model"
+            , LocalStorage.get "model"
             ]
 
 
@@ -150,8 +150,22 @@ view model =
                 [ text chars.copyright
                 , text "Copyright 2026, Bill St. Clair"
                 , br
+                , a [ href "https://elm-lang.org" ]
+                    [ img
+                        [ src "images/elm-logo-125x125.png"
+                        , alt "Elm"
+                        , height 32
+                        ]
+                        []
+                    ]
                 , a [ href "https://github.com/billstclair/elmcrop" ]
-                    [ text "GitHub" ]
+                    [ img
+                        [ src "images/GitHub-Mark-32px.png"
+                        , alt "GitHub"
+                        , height 32
+                        ]
+                        []
+                    ]
                 ]
             ]
         ]
@@ -238,7 +252,12 @@ update msg model =
                 |> withNoCmd
 
         ReceiveLocalStorage value ->
-            receiveLocalStorage (Debug.log "receiveLocalStorage, value" value) model
+            let
+                json =
+                    Debug.log "receiveLocalStorage, value" <|
+                        JE.encode 0 value
+            in
+            receiveLocalStorage model value
 
         OnUrlChange url ->
             model |> withNoCmd
@@ -255,8 +274,8 @@ update msg model =
             model |> withCmd Navigation.reloadAndSkipCache
 
 
-receiveLocalStorage : Value -> Model -> ( Model, Cmd Msg )
-receiveLocalStorage value model =
+receiveLocalStorage : Model -> Value -> ( Model, Cmd Msg )
+receiveLocalStorage model value =
     -- Todo
     model |> withNoCmd
 

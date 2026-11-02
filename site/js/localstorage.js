@@ -31,10 +31,10 @@
 
     localStorageIn.subscribe(function(cmd) {
       var getOrPut = cmd.getOrPut;
-      var label = cmd.label;
       var key = cmd.key
+      var label = cmd.label;
       if (getOrPut == "put") {
-        var val = cmd.val;
+        var val = cmd.value;
         if (!val) {
           storage.removeItem(key);
         } else {
@@ -48,7 +48,9 @@
           val = JSON.parse(storage.getItem(key));
         } catch (e) {
         }
-        localStorageOut.send({ label: label, key: key, val: val })
+        localStorageOut.send(
+          { getOrPut: getOrPut, key: key, label: label, value: val }
+        );
       }
     })
   };
