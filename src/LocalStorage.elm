@@ -19,6 +19,7 @@ port module LocalStorage exposing
     , localStorageIn
     , localStorageOut
     , put
+    , setPrefix
     )
 
 import Json.Decode as JD exposing (Decoder)
@@ -29,6 +30,7 @@ import Json.Encode as JE exposing (Value)
 type GetOrPut
     = Get
     | Put
+    | SetPrefix
 
 
 type alias Command =
@@ -49,6 +51,17 @@ getLabeled key label =
     { getOrPut = Get
     , key = key
     , label = label
+    , value = JE.null
+    }
+        |> encodeCommand
+        |> localStorageIn
+
+
+setPrefix : String -> Cmd msg
+setPrefix prefix =
+    { getOrPut = SetPrefix
+    , key = prefix
+    , label = ""
     , value = JE.null
     }
         |> encodeCommand
@@ -86,6 +99,9 @@ encodeCommand command =
 
                     Put ->
                         "put"
+
+                    SetPrefix ->
+                        "setprefix"
                 )
           )
         , ( "key", JE.string command.key )
@@ -113,6 +129,9 @@ getOrPutDecoder =
 
                 else if s == "put" then
                     JD.succeed Put
+
+                else if s == "setprefix" then
+                    JD.succeed SetPrefix
 
                 else
                     JD.fail "Not get or put"

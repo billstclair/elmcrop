@@ -87,7 +87,7 @@ init flags url key =
     }
         |> withCmds
             [ Task.perform RecordTime Time.now
-            , LocalStorage.get "model"
+            , LocalStorage.setPrefix "elmcrop"
             ]
 
 
@@ -148,21 +148,24 @@ view model =
                 ]
             , p []
                 [ text chars.copyright
-                , text "Copyright 2026, Bill St. Clair"
+                , text "Copyright 2026, "
+                , a [ href "https://billstclair.com/" ]
+                    [ text "Bill St. Clair" ]
                 , br
                 , a [ href "https://elm-lang.org" ]
                     [ img
                         [ src "images/elm-logo-125x125.png"
                         , alt "Elm"
-                        , height 32
+                        , height 24
                         ]
                         []
                     ]
+                , text " "
                 , a [ href "https://github.com/billstclair/elmcrop" ]
                     [ img
                         [ src "images/GitHub-Mark-32px.png"
                         , alt "GitHub"
-                        , height 32
+                        , height 24
                         ]
                         []
                     ]
