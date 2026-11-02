@@ -44,12 +44,12 @@
         } else {
           var str = JSON.stringify(val);
           if (typeof(str) == 'string') {
-            storage.setItem(prefix + key, str);
+            storage.setItem(prefix + "." + key, str);
           }
         }
       } else if (getOrPut == "get") {
         try {
-          val = JSON.parse(storage.getItem(prefix + key));
+          val = JSON.parse(storage.getItem(prefix + "." + key));
         } catch (e) {
         }
         localStorageOut.send(
