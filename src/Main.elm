@@ -240,6 +240,26 @@ addZero string =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        ( newModel, cmd ) =
+            updateInternal msg model
+
+        newSavedModel =
+            modelToSavedModel newModel
+    in
+    newModel
+        |> withCmds
+            [ cmd
+            , if newSavedModel /= modelToSavedModel model then
+                LocalStorage.put "model" <| encodeSavedModel newSavedModel
+
+              else
+                Cmd.none
+            ]
+
+
+updateInternal : Msg -> Model -> ( Model, Cmd Msg )
+updateInternal msg model =
     case msg of
         Nop ->
             model |> withNoCmd
