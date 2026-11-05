@@ -76,6 +76,7 @@ type Msg
     | ReloadFromServer
     | RecordTime Posix
     | ReceiveLocalStorage Value
+    | InitializeModel
 
 
 init : Value -> Url -> Key -> ( Model, Cmd Msg )
@@ -280,6 +281,9 @@ updateInternal msg model =
                         JE.encode 0 value
             in
             receiveLocalStorage model value
+
+        InitializeModel ->
+            model |> withNoCmd
 
         OnUrlChange url ->
             model |> withNoCmd
