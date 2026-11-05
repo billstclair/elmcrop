@@ -25,7 +25,7 @@ import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
-import LocalStorage exposing (Command, GetOrPut(..), localStorageOut)
+import LocalStorage exposing (Command, GetOrPut(..))
 import Task exposing (Task)
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -51,13 +51,9 @@ main =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     [ Time.every 1000 RecordTime
-    , localStorageOut ReceiveLocalStorage
+    , LocalStorage.localStorageOut ReceiveLocalStorage
     ]
         |> Sub.batch
-
-
-
--- standard window size: 840x550
 
 
 type alias Model =
