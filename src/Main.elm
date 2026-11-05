@@ -15,7 +15,8 @@ port module Main exposing (main)
 --
 
 import Browser exposing (Document, UrlRequest(..))
-import Browser.Dom as Dom
+import Browser.Dom as Dom exposing (Viewport)
+import Browser.Events as Events
 import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
@@ -65,7 +66,6 @@ type alias Model =
     , key : Key
 
     -- Persistent below here
-    , windowSize : Pair
     }
 
 
@@ -83,7 +83,6 @@ init flags url key =
     { now = Time.millisToPosix 0
     , url = url
     , key = key
-    , windowSize = { width = 840, height = 550 }
     }
         |> withCmds
             [ Task.perform RecordTime Time.now
@@ -329,7 +328,25 @@ receiveModel value model =
         json =
             Debug.log "receiveModel" <| JE.encode 0 value
     in
-    model |> withNoCmd
+    if value == JE.null then
+        model |> withNoCmd
+
+    else
+        case decodeSavedModel value of
+            Err err ->
+                let
+                    err2 =
+                        Debug.log "Error decoding model" err
+                in
+                model |> withNoCmd
+
+            Ok savedModel ->
+                let
+                    newModel =
+                        savedModelToModel savedModel model
+                in
+                newModel
+                    |> withNoCmd
 
 
 receiveValue : String -> Value -> Model -> ( Model, Cmd Msg )
@@ -352,21 +369,17 @@ type alias Pair =
 
 
 type alias SavedModel =
-    { windowSize : Pair
-    }
+    {}
 
 
 modelToSavedModel : Model -> SavedModel
 modelToSavedModel model =
-    { windowSize = model.windowSize
-    }
+    {}
 
 
 savedModelToModel : SavedModel -> Model -> Model
 savedModelToModel savedModel model =
-    { model
-        | windowSize = savedModel.windowSize
-    }
+    model
 
 
 
@@ -391,11 +404,14 @@ pairDecoder =
 encodeSavedModel : SavedModel -> Value
 encodeSavedModel savedModel =
     JE.object
-        [ ( "windowSize", encodePair savedModel.windowSize )
-        ]
+        []
 
 
 savedModelDecoder : Decoder SavedModel
 savedModelDecoder =
     JD.succeed SavedModel
-        |> required "windowSize" pairDecoder
+
+
+decodeSavedModel : Value -> Result JD.Error SavedModel
+decodeSavedModel value =
+    JD.decodeValue savedModelDecoder value
