@@ -58,7 +58,7 @@ subscriptions model =
 
 
 type alias Model =
-    { now : Posix
+    { now : Int
     , url : Url
     , key : Key
 
@@ -78,7 +78,7 @@ type Msg
 
 init : Value -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
-    { now = Time.millisToPosix 0
+    { now = 0
     , url = url
     , key = key
     }
@@ -241,13 +241,16 @@ update msg model =
         ( newModel, cmd ) =
             updateInternal msg model
 
+        oldSavedModel =
+            modelToSavedModel model
+
         newSavedModel =
             modelToSavedModel newModel
     in
     newModel
         |> withCmds
             [ cmd
-            , if newSavedModel /= modelToSavedModel model then
+            , if newSavedModel /= oldSavedModel then
                 LocalStorage.put "model" <| encodeSavedModel newSavedModel
 
               else
@@ -267,16 +270,11 @@ updateInternal msg model =
                     Time.posixToMillis posix
             in
             { model
-                | now = posix
+                | now = now
             }
                 |> withNoCmd
 
         ReceiveLocalStorage value ->
-            let
-                json =
-                    Debugging.log "receiveLocalStorage, value" <|
-                        JE.encode 0 value
-            in
             receiveLocalStorage model value
 
         InitializeModel ->
@@ -302,12 +300,21 @@ receiveLocalStorage model value =
     case LocalStorage.decodeCommand value of
         Err err ->
             let
+                json =
+                    Debugging.log "receiveLocalStorage error, value" <|
+                        JE.encode 0 value
+
                 errString =
-                    Debugging.log "LocalStorage error: " <| JD.errorToString err
+                    Debugging.log "  " <| JD.errorToString err
             in
             model |> withNoCmd
 
         Ok command ->
+            let
+                printableCommand =
+                    Debugging.log "receiveLocalStorage" <|
+                        LocalStorage.toPrintableCommand command
+            in
             case command.getOrPut of
                 SetPrefix ->
                     model |> withCmd (LocalStorage.get "model")
@@ -369,6 +376,8 @@ type alias Pair =
     }
 
 
+{-| Must be `comparable` for `udpate` to write to `LocalStorage` only when necessary.
+-}
 type alias SavedModel =
     {}
 

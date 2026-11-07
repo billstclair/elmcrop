@@ -13,6 +13,7 @@
 port module LocalStorage exposing
     ( Command
     , GetOrPut(..)
+    , PrintableCommand
     , commandDecoder
     , decodeCommand
     , encodeCommand
@@ -23,6 +24,7 @@ port module LocalStorage exposing
     , put
     , putLabeled
     , setPrefix
+    , toPrintableCommand
     )
 
 import Debugging
@@ -43,6 +45,19 @@ type alias Command =
     , label : String
     , value : Value
     }
+
+
+type alias PrintableCommand =
+    { getOrPut : GetOrPut
+    , key : String
+    , label : String
+    , value : String
+    }
+
+
+toPrintableCommand : Command -> PrintableCommand
+toPrintableCommand { getOrPut, key, label, value } =
+    PrintableCommand getOrPut key label <| JE.encode 0 value
 
 
 get : String -> Cmd msg
@@ -92,7 +107,7 @@ encodeCommand : Command -> Value
 encodeCommand command =
     let
         cmd =
-            Debugging.log "LocalStorage send" command
+            Debugging.log "LocalStorage send" <| toPrintableCommand command
     in
     JE.object
         [ ( "getOrPut"
