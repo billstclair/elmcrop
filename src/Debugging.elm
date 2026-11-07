@@ -22,5 +22,4 @@ Change this to remove it for shipping.
 -}
 log : String -> x -> x
 log string x =
-    -- Debug.log string x
-    x
+    Debug.log string x
