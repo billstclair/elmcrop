@@ -25,6 +25,7 @@ port module LocalStorage exposing
     , setPrefix
     )
 
+import Debugging
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
@@ -91,7 +92,7 @@ encodeCommand : Command -> Value
 encodeCommand command =
     let
         cmd =
-            Debug.log "LocalStorage send" command
+            Debugging.log "LocalStorage send" command
     in
     JE.object
         [ ( "getOrPut"

@@ -19,6 +19,7 @@ import Browser.Dom as Dom exposing (Viewport)
 import Browser.Events as Events
 import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
+import Debugging
 import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
@@ -273,7 +274,7 @@ updateInternal msg model =
         ReceiveLocalStorage value ->
             let
                 json =
-                    Debug.log "receiveLocalStorage, value" <|
+                    Debugging.log "receiveLocalStorage, value" <|
                         JE.encode 0 value
             in
             receiveLocalStorage model value
@@ -302,7 +303,7 @@ receiveLocalStorage model value =
         Err err ->
             let
                 errString =
-                    Debug.log "LocalStorage error: " <| JD.errorToString err
+                    Debugging.log "LocalStorage error: " <| JD.errorToString err
             in
             model |> withNoCmd
 
@@ -326,7 +327,7 @@ receiveModel : Value -> Model -> ( Model, Cmd Msg )
 receiveModel value model =
     let
         json =
-            Debug.log "receiveModel" <| JE.encode 0 value
+            Debugging.log "receiveModel" <| JE.encode 0 value
     in
     if value == JE.null then
         model |> withNoCmd
@@ -336,7 +337,7 @@ receiveModel value model =
             Err err ->
                 let
                     err2 =
-                        Debug.log "Error decoding model" err
+                        Debugging.log "Error decoding model" err
                 in
                 model |> withNoCmd
 
@@ -353,7 +354,7 @@ receiveValue : String -> Value -> Model -> ( Model, Cmd Msg )
 receiveValue key value model =
     let
         json =
-            Debug.log ("receiveValue \"" ++ key ++ "\"") <| JE.encode 0 value
+            Debugging.log ("receiveValue \"" ++ key ++ "\"") <| JE.encode 0 value
     in
     model |> withNoCmd
 
