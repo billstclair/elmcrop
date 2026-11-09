@@ -16,7 +16,7 @@ port module Main exposing (main)
 
 import Browser exposing (Document, UrlRequest(..))
 import Browser.Dom as Dom exposing (Viewport)
-import Browser.Events as Events
+import Browser.Events as Events exposing (Visibility(..))
 import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Debugging
@@ -53,6 +53,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     [ Time.every 1000 RecordTime
     , LocalStorage.localStorageOut ReceiveLocalStorage
+
+    -- TODO: Not quite right. Doesn't become invisible when another app is selected.
+    -- Try the `focusin` and `focusout` events
+    , Events.onVisibilityChange ChangeVisibility
     ]
         |> Sub.batch
 
@@ -61,6 +65,7 @@ type alias Model =
     { now : Int
     , url : Url
     , key : Key
+    , visibility : Visibility
 
     -- Persistent below here
     }
@@ -74,6 +79,7 @@ type Msg
     | RecordTime Posix
     | ReceiveLocalStorage Value
     | InitializeModel
+    | ChangeVisibility Visibility
 
 
 init : Value -> Url -> Key -> ( Model, Cmd Msg )
@@ -81,6 +87,7 @@ init flags url key =
     { now = 0
     , url = url
     , key = key
+    , visibility = Visible
     }
         |> withCmds
             [ Task.perform RecordTime Time.now
@@ -241,29 +248,33 @@ largeSpacer =
 
 buttonBar : Model -> List (Html Msg)
 buttonBar model =
-    [ buttonBarButton "Photo-Import-24x24.png" True "Open" Nop
+    let
+        visible =
+            model.visibility == Visible
+    in
+    [ buttonBarButton "Photo-Import-24x24.png" visible "Open" Nop
     , largeSpacer
-    , buttonBarButton "Photo-Save-24x24.png" True "Save" Nop
+    , buttonBarButton "Photo-Save-24x24.png" visible "Save" Nop
     , largeSpacer
-    , buttonBarButton "Copy-24x24.png" True "Copy" Nop
+    , buttonBarButton "Copy-24x24.png" visible "Copy" Nop
     , largeSpacer
-    , buttonBarButton "Close-24x24.png" True "Close" Nop
+    , buttonBarButton "Close-24x24.png" visible "Close" Nop
     , largeSpacer
-    , buttonBarButton "Rectangular-marquee-tool_34582.png" True "Capture Selection" Nop
+    , buttonBarButton "Rectangular-marquee-tool_34582.png" visible "Capture Selection" Nop
     , spacer
-    , buttonBarButton "window-24x24.png" True "Capture Window" Nop
+    , buttonBarButton "window-24x24.png" visible "Capture Window" Nop
     , spacer
-    , buttonBarButton "windows-24x24.png" True "Capture Screen" Nop
+    , buttonBarButton "windows-24x24.png" visible "Capture Screen" Nop
     , spacer
-    , buttonBarButton "timer-24x24.png" True "Timed Capture" Nop
+    , buttonBarButton "timer-24x24.png" visible "Timed Capture" Nop
     , largeSpacer
-    , buttonBarButton "Information-24x24.png" True "Show Info" Nop
+    , buttonBarButton "Information-24x24.png" visible "Show Info" Nop
     , span
         [ style "float" "right"
         ]
-        [ buttonBarButton "quick-look-24x24.png" True "Quick Look" Nop
+        [ buttonBarButton "quick-look-24x24.png" visible "Quick Look" Nop
         , spacer
-        , buttonBarButton "share-24x24.png" True "Share" Nop
+        , buttonBarButton "share-24x24.png" visible "Share" Nop
         ]
     ]
 
@@ -349,6 +360,10 @@ updateInternal msg model =
 
         InitializeModel ->
             model |> withNoCmd
+
+        ChangeVisibility visibility ->
+            { model | visibility = Debugging.log "visibility" visibility }
+                |> withNoCmd
 
         OnUrlChange url ->
             model |> withNoCmd
