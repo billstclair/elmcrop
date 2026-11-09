@@ -21,7 +21,7 @@ import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Debugging
 import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
-import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, type_, value, width)
+import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
@@ -110,9 +110,9 @@ view model =
     , body =
         [ div
             [ style "width" "100%"
-            , id "menubar"
+            , id "buttonBar"
             ]
-            (menubar model)
+            (buttonBar model)
         , table
             [ style "width" "100%"
             ]
@@ -198,9 +198,74 @@ viewRightColumn model =
         ]
 
 
-menubar : Model -> List (Html Msg)
-menubar model =
-    [ text "menubar" ]
+buttonBarButton : String -> Bool -> String -> Msg -> Html Msg
+buttonBarButton imgName enabled title msg =
+    Html.span
+        [ Html.Attributes.title title
+        , style "width" "100%"
+        , onClick msg
+        ]
+        [ img
+            [ src <|
+                "images/icons/"
+                    ++ (if enabled then
+                            ""
+
+                        else
+                            "disabled/"
+                       )
+                    ++ imgName
+            , style "width" "24px"
+            , style "height" "24px"
+            ]
+            []
+        ]
+
+
+spacer : Html msg
+spacer =
+    span []
+        [ nbsp
+        , nbsp
+        ]
+
+
+largeSpacer : Html msg
+largeSpacer =
+    span []
+        [ spacer
+        , spacer
+        , spacer
+        ]
+
+
+buttonBar : Model -> List (Html Msg)
+buttonBar model =
+    [ buttonBarButton "Photo-Import-24x24.png" True "Open" Nop
+    , largeSpacer
+    , buttonBarButton "Photo-Save-24x24.png" True "Save" Nop
+    , largeSpacer
+    , buttonBarButton "Copy-24x24.png" True "Copy" Nop
+    , largeSpacer
+    , buttonBarButton "Close-24x24.png" True "Close" Nop
+    , largeSpacer
+    , buttonBarButton "Rectangular-marquee-tool_34582.png" True "Capture Selection" Nop
+    , spacer
+    , buttonBarButton "window-24x24.png" True "Capture Window" Nop
+    , spacer
+    , buttonBarButton "windows-24x24.png" True "Capture Screen" Nop
+    , spacer
+    , buttonBarButton "timer-24x24.png" True "Timed Capture" Nop
+    , largeSpacer
+    , buttonBarButton "Information-24x24.png" True "Show Info" Nop
+    , span
+        [ style "float" "right"
+        ]
+        [ buttonBarButton "quick-look-24x24.png" True "Quick Look" Nop
+        , spacer
+        , buttonBarButton "share-24x24.png" True "Share" Nop
+        ]
+    ]
 
 
 codestr code =
@@ -212,6 +277,11 @@ chars =
     , copyright = codestr 0xA9
     , nbsp = codestr 0xA0
     }
+
+
+nbsp : Html msg
+nbsp =
+    text chars.nbsp
 
 
 addPointZero : String -> String
