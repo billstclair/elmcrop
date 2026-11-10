@@ -116,62 +116,69 @@ view model =
     { title = "ElmCrop"
     , body =
         [ div
-            [ style "width" "100%"
-            , id "buttonBar"
-            ]
-            (buttonBar model)
-        , table
-            [ style "width" "100%"
-            ]
-            -- TODO
-            [ tr
+            [ style "background-color" "#e0e0e0" ]
+            [ div
+                [ style "background-color" "lightgray" ]
+                [ div
+                    [ style "width" "100%"
+                    , style "padding" "10px"
+                    , id "buttonBar"
+                    ]
+                    (buttonBar model)
+                ]
+            , table
                 [ style "width" "100%"
                 ]
-                [ td
-                    [ style "width" "49%"
+                -- TODO
+                [ tr
+                    [ style "width" "100%"
                     ]
-                    [ viewLeftColumn model ]
-                , td
-                    [ style "width" "2%"
-                    ]
-                    [ text "" ]
-                , td
-                    [ style "width" "49%"
-                    ]
-                    [ viewRightColumn model ]
-                ]
-            ]
-        , div [ id "footer" ]
-            [ br
-            , p []
-                [ a
-                    [ href "#"
-                    , onClick ReloadFromServer
-                    ]
-                    [ text "Reload from Server" ]
-                ]
-            , p []
-                [ text chars.copyright
-                , text "Copyright 2026, "
-                , a [ href "https://billstclair.com/" ]
-                    [ text "Bill St. Clair" ]
-                , br
-                , a [ href "https://elm-lang.org" ]
-                    [ img
-                        [ src "images/elm-logo-125x125.png"
-                        , alt "Elm"
-                        , height 24
+                    [ td
+                        [ style "width" "49%"
                         ]
-                        []
-                    ]
-                , text " "
-                , a [ href "https://github.com/billstclair/elmcrop" ]
-                    [ img
-                        [ src "images/GitHub-Mark-32px.png"
-                        , alt "GitHub"
-                        , height 24
+                        [ viewLeftColumn model ]
+                    , td
+                        [ style "width" "2%"
                         ]
-                        []
+                        [ text "" ]
+                    , td
+                        [ style "width" "49%"
+                        ]
+                        [ viewRightColumn model ]
+                    ]
+                ]
+            , div [ id "footer" ]
+                [ br
+                , p []
+                    [ a
+                        [ href "#"
+                        , onClick ReloadFromServer
+                        ]
+                        [ text "Reload from Server" ]
+                    ]
+                , p []
+                    [ text chars.copyright
+                    , text "Copyright 2026, "
+                    , a [ href "https://billstclair.com/" ]
+                        [ text "Bill St. Clair" ]
+                    , br
+                    , a [ href "https://elm-lang.org" ]
+                        [ img
+                            [ src "images/elm-logo-125x125.png"
+                            , alt "Elm"
+                            , height 24
+                            ]
+                            []
+                        ]
+                    , text " "
+                    , a [ href "https://github.com/billstclair/elmcrop" ]
+                        [ img
+                            [ src "images/GitHub-Mark-32px.png"
+                            , alt "GitHub"
+                            , height 24
+                            ]
+                            []
+                        ]
                     ]
                 ]
             ]
