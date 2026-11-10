@@ -116,9 +116,11 @@ view model =
     { title = "ElmCrop"
     , body =
         [ div
-            [ style "background-color" "#e0e0e0" ]
+            [ style "background-color" "#e8e8e8" ]
             [ div
-                [ style "background-color" "lightgray" ]
+                [ style "background-color" "lightgray"
+                , style "margin" "0"
+                ]
                 [ div
                     [ style "width" "100%"
                     , style "padding" "10px"
@@ -278,6 +280,7 @@ buttonBar model =
     , buttonBarButton "Information-24x24.png" visible "Show Info" Nop
     , span
         [ style "float" "right"
+        , style "margin-right" "10px"
         ]
         [ buttonBarButton "quick-look-24x24.png" visible "Quick Look" Nop
         , spacer
