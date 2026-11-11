@@ -580,10 +580,20 @@ pairDecoder =
         |> required "height" JD.float
 
 
+encodeMaybe : (x -> Value) -> Maybe x -> Value
+encodeMaybe encoder maybeX =
+    case maybeX of
+        Nothing ->
+            JE.null
+
+        Just x ->
+            encoder x
+
+
 encodeSavedModel : SavedModel -> Value
 encodeSavedModel savedModel =
     JE.object
-        []
+        [ ( "capturedUrl", encodeMaybe JE.string <| savedModel.capturedUrl ) ]
 
 
 savedModelDecoder : Decoder SavedModel
