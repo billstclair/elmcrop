@@ -93,6 +93,9 @@ type Msg
     | ReceiveCaptureScreen Value
     | InitializeModel
     | ChangeVisibility Visibility
+    | CloseImage
+    | CaptureScreen
+    | TimedCaptureScreen
 
 
 init : Value -> Url -> Key -> ( Model, Cmd Msg )
@@ -106,7 +109,6 @@ init flags url key =
         |> withCmds
             [ Task.perform RecordTime Time.now
             , LocalStorage.setPrefix "elmcrop"
-            , captureScreenIn JE.null
             ]
 
 
@@ -249,6 +251,7 @@ buttonBarButton imgName enabled title msg =
         [ Html.Attributes.title title
         , style "width" "100%"
         , onClick msg
+        , style "cursor" "pointer"
         ]
         [ img
             [ src <|
@@ -296,15 +299,16 @@ buttonBar model =
     , largeSpacer
     , buttonBarButton "Copy-24x24.png" visible "Copy" Nop
     , largeSpacer
-    , buttonBarButton "Close-24x24.png" visible "Close" Nop
+    , buttonBarButton "Close-24x24.png" visible "Close" CloseImage
     , largeSpacer
-    , buttonBarButton "Rectangular-marquee-tool_34582.png" visible "Capture Selection" Nop
+
+    --, buttonBarButton "Rectangular-marquee-tool_34582.png" visible "Capture Selection" Nop
+    --, spacer
+    --, buttonBarButton "window-24x24.png" visible "Capture Window" Nop
+    --, spacer
+    , buttonBarButton "windows-24x24.png" visible "Capture Screen" CaptureScreen
     , spacer
-    , buttonBarButton "window-24x24.png" visible "Capture Window" Nop
-    , spacer
-    , buttonBarButton "windows-24x24.png" visible "Capture Screen" Nop
-    , spacer
-    , buttonBarButton "timer-24x24.png" visible "Timed Capture" Nop
+    , buttonBarButton "timer-24x24.png" visible "Timed Capture" TimedCaptureScreen
     , largeSpacer
     , buttonBarButton "Information-24x24.png" visible "Show Info" Nop
     , span
@@ -406,6 +410,17 @@ updateInternal msg model =
         ChangeVisibility visibility ->
             { model | visibility = Debugging.log "visibility" visibility }
                 |> withNoCmd
+
+        CloseImage ->
+            { model | capturedUrl = Nothing }
+                |> withNoCmd
+
+        CaptureScreen ->
+            model |> withCmd (captureScreenIn JE.null)
+
+        TimedCaptureScreen ->
+            -- TODO
+            model |> withNoCmd
 
         OnUrlChange url ->
             model |> withNoCmd
