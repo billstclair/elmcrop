@@ -94,7 +94,7 @@ type Msg
     | InitializeModel
     | ChangeVisibility Visibility
     | CloseImage
-    | CaptureScreen
+    | CaptureScreen String
     | TimedCaptureScreen
 
 
@@ -314,9 +314,11 @@ buttonBar model =
 
     --, buttonBarButton "Rectangular-marquee-tool_34582.png" visible "Capture Selection" Nop
     --, spacer
-    --, buttonBarButton "window-24x24.png" visible "Capture Window" Nop
-    --, spacer
-    , buttonBarButton "windows-24x24.png" visible "Capture Screen" CaptureScreen
+    , buttonBarButton "window-24x24.png" visible "Capture Window" <|
+        CaptureScreen "window"
+    , spacer
+    , buttonBarButton "windows-24x24.png" visible "Capture Screen" <|
+        CaptureScreen "monitor"
     , spacer
     , buttonBarButton "timer-24x24.png" visible "Timed Capture" TimedCaptureScreen
     , largeSpacer
@@ -425,8 +427,8 @@ updateInternal msg model =
             { model | capturedUrl = defaultCapturedUrl }
                 |> withNoCmd
 
-        CaptureScreen ->
-            model |> withCmd (captureScreenIn JE.null)
+        CaptureScreen displaySurface ->
+            model |> withCmd (captureScreenIn <| JE.string displaySurface)
 
         TimedCaptureScreen ->
             -- TODO
@@ -526,8 +528,7 @@ receiveCaptureScreen model value =
                 err2 =
                     Debugging.log "receiveCaptureScreen error" err
             in
-            { model | capturedUrl = defaultCapturedUrl }
-                |> withNoCmd
+            model |> withNoCmd
 
         Ok string ->
             { model | capturedUrl = Just string }

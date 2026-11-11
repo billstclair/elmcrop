@@ -13,11 +13,13 @@
 
 (function(scope) {
 
-  async function captureScreen() {
+  async function captureScreen(displaySurface) {
     try {
       // Request screen capture permission
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: "always" }
+        video: { cursor: "always",
+                 displaySurface: displaySurface
+               }
       });
       
       const video = document.createElement("video");
@@ -62,9 +64,9 @@
       return;
     }
 
-    captureScreenIn.subscribe(function() {
+    captureScreenIn.subscribe(function(displaySurface) {
       var url = null;
-      captureScreen().then((urlDePromised) => {
+      captureScreen(displaySurface).then((urlDePromised) => {
         url = urlDePromised;
         captureScreenOut.send(url);
       }).catch((error) => {
