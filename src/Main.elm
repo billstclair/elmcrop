@@ -98,13 +98,18 @@ type Msg
     | TimedCaptureScreen
 
 
+defaultCapturedUrl : Maybe String
+defaultCapturedUrl =
+    Just "images/icon-512.png"
+
+
 init : Value -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     { now = 0
     , url = url
     , key = key
     , visibility = Visible
-    , capturedUrl = Nothing
+    , capturedUrl = defaultCapturedUrl
     }
         |> withCmds
             [ Task.perform RecordTime Time.now
@@ -220,12 +225,12 @@ viewLeftColumn model =
                     text ""
 
                 Just capturedUrl ->
+                    -- TODO Drag image that is too big to fit
                     img
                         [ src capturedUrl
-                        , style "object-fit" "contain"
-
-                        --TODO sample div width and make image fit
-                        , width 500
+                        , style "object-fit" "cover"
+                        , style "width" "100%"
+                        , style "height" "100%"
                         ]
                         []
             ]
@@ -417,7 +422,7 @@ updateInternal msg model =
                 |> withNoCmd
 
         CloseImage ->
-            { model | capturedUrl = Nothing }
+            { model | capturedUrl = defaultCapturedUrl }
                 |> withNoCmd
 
         CaptureScreen ->
@@ -521,7 +526,7 @@ receiveCaptureScreen model value =
                 err2 =
                     Debugging.log "receiveCaptureScreen error" err
             in
-            { model | capturedUrl = Nothing }
+            { model | capturedUrl = defaultCapturedUrl }
                 |> withNoCmd
 
         Ok string ->
