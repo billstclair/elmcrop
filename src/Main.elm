@@ -251,7 +251,12 @@ buttonBarButton imgName enabled title msg =
         [ Html.Attributes.title title
         , style "width" "100%"
         , onClick msg
-        , style "cursor" "pointer"
+        , style "cursor" <|
+            if enabled then
+                "pointer"
+
+            else
+                "auto"
         ]
         [ img
             [ src <|
