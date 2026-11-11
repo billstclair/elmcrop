@@ -2,9 +2,7 @@ ElmCrop
 
 A clone of YellowMug Software's defunct EasyCrop app.
 
-Unfortunately, I can find no practical way to draw the selection outline outside the browser window. You can access the screen image by using `navigator.mediaDevices.getDisplayMedia()`, (see [this Brave search](https://search.brave.com/search?q=read+screen+image+in+javascript+)), but even that requires system permissions.
-
-I've decided to pause development of this webapp, maybe forever. I'll have to find a native app to do my screen captures.
+Unfortunately, I can find no practical way to draw the selection outline outside the browser window. You can access the screen image by using `navigator.mediaDevices.getDisplayMedia()`, (see [this Brave search](https://search.brave.com/search?q=read+screen+image+in+javascript+)), so that's what I did.
 
 For development:
 
