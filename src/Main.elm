@@ -464,11 +464,6 @@ receiveLocalStorage model value =
             model |> withNoCmd
 
         Ok command ->
-            let
-                printableCommand =
-                    Debugging.log "receiveLocalStorage" <|
-                        LocalStorage.toPrintableCommand command
-            in
             case command.getOrPut of
                 SetPrefix ->
                     model |> withCmd (LocalStorage.get "model")
@@ -486,10 +481,6 @@ receiveLocalStorage model value =
 
 receiveModel : Value -> Model -> ( Model, Cmd Msg )
 receiveModel value model =
-    let
-        json =
-            Debugging.log "receiveModel" <| JE.encode 0 value
-    in
     if value == JE.null then
         model |> withNoCmd
 
@@ -513,10 +504,6 @@ receiveModel value model =
 
 receiveValue : String -> Value -> Model -> ( Model, Cmd Msg )
 receiveValue key value model =
-    let
-        json =
-            Debugging.log ("receiveValue \"" ++ key ++ "\"") <| JE.encode 0 value
-    in
     model |> withNoCmd
 
 

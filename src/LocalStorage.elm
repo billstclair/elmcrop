@@ -105,10 +105,6 @@ putLabeled key label value =
 
 encodeCommand : Command -> Value
 encodeCommand command =
-    let
-        cmd =
-            Debugging.log "LocalStorage send" <| toPrintableCommand command
-    in
     JE.object
         [ ( "getOrPut"
           , JE.string
