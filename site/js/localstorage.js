@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 //
-// LocalStorage.js
+// localstorage.js
 // JavaScript runtime code for LocalStorage read/write.
 // Copyright (c) 2026 Bill St. Clair <billstclair@gmail.com>
 // Some rights reserved.

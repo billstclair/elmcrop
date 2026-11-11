@@ -32,6 +32,16 @@ import Time exposing (Posix)
 import Url exposing (Url)
 
 
+{-| Capture the screen, and send a URL to captureScreenOut.
+-}
+port captureScreenIn : Value -> Cmd msg
+
+
+{-| Receive a screen capture as a URL.
+-}
+port captureScreenOut : (Value -> msg) -> Sub msg
+
+
 port selectAll : String -> Cmd msg
 
 
@@ -53,6 +63,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     [ Time.every 1000 RecordTime
     , LocalStorage.localStorageOut ReceiveLocalStorage
+    , captureScreenOut ReceiveCaptureScreen
 
     -- TODO: Not quite right. Doesn't become invisible when another app is selected.
     -- Try the `focusin` and `focusout` events
@@ -68,6 +79,7 @@ type alias Model =
     , visibility : Visibility
 
     -- Persistent below here
+    , capturedUrl : Maybe String
     }
 
 
@@ -78,6 +90,7 @@ type Msg
     | ReloadFromServer
     | RecordTime Posix
     | ReceiveLocalStorage Value
+    | ReceiveCaptureScreen Value
     | InitializeModel
     | ChangeVisibility Visibility
 
@@ -88,10 +101,12 @@ init flags url key =
     , url = url
     , key = key
     , visibility = Visible
+    , capturedUrl = Nothing
     }
         |> withCmds
             [ Task.perform RecordTime Time.now
             , LocalStorage.setPrefix "elmcrop"
+            , captureScreenIn JE.null
             ]
 
 
@@ -190,14 +205,28 @@ view model =
 
 viewLeftColumn : Model -> Html Msg
 viewLeftColumn model =
+    -- TODO compute height to make content fill window
     div [ style "height" "256px" ]
         [ text "Drop picture here"
         , div
             [ style "width" "100%"
             , style "height" "100%"
-            , style "background-color" "red"
+            , style "background-color" "white"
             ]
-            []
+            [ case model.capturedUrl of
+                Nothing ->
+                    text ""
+
+                Just capturedUrl ->
+                    img
+                        [ src capturedUrl
+                        , style "object-fit" "contain"
+
+                        --TODO sample div width and make image fit
+                        , width 500
+                        ]
+                        []
+            ]
         ]
 
 
@@ -368,6 +397,9 @@ updateInternal msg model =
         ReceiveLocalStorage value ->
             receiveLocalStorage model value
 
+        ReceiveCaptureScreen value ->
+            receiveCaptureScreen model value
+
         InitializeModel ->
             model |> withNoCmd
 
@@ -461,6 +493,22 @@ receiveValue key value model =
     model |> withNoCmd
 
 
+receiveCaptureScreen : Model -> Value -> ( Model, Cmd Msg )
+receiveCaptureScreen model value =
+    case JD.decodeValue JD.string value of
+        Err err ->
+            let
+                err2 =
+                    Debugging.log "receiveCaptureScreen error" err
+            in
+            { model | capturedUrl = Nothing }
+                |> withNoCmd
+
+        Ok string ->
+            { model | capturedUrl = Just string }
+                |> withNoCmd
+
+
 
 -- Persistence
 
@@ -474,17 +522,18 @@ type alias Pair =
 {-| Must be `comparable` for `udpate` to write to `LocalStorage` only when necessary.
 -}
 type alias SavedModel =
-    {}
+    { capturedUrl : Maybe String
+    }
 
 
 modelToSavedModel : Model -> SavedModel
 modelToSavedModel model =
-    {}
+    { capturedUrl = model.capturedUrl }
 
 
 savedModelToModel : SavedModel -> Model -> Model
 savedModelToModel savedModel model =
-    model
+    { model | capturedUrl = savedModel.capturedUrl }
 
 
 
@@ -515,6 +564,7 @@ encodeSavedModel savedModel =
 savedModelDecoder : Decoder SavedModel
 savedModelDecoder =
     JD.succeed SavedModel
+        |> required "capturedUrl" (JD.nullable JD.string)
 
 
 decodeSavedModel : Value -> Result JD.Error SavedModel
