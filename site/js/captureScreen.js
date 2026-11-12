@@ -95,6 +95,8 @@
       captureScreen(displaySurface, which, stream).then((url) => {
         if (which == 'get') {
           stream = url;
+          // Let the Elm code know we got here.
+          captureScreenOut.send("");
         } else {
           stream = null;
           captureScreenOut.send(url);

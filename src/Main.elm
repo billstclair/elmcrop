@@ -33,8 +33,9 @@ import Url exposing (Url)
 
 
 {-| Capture the screen, and send a URL to captureScreenOut.
+Arg is either a string or { displaySurface: "foo", which: "bar" }
 -}
-port captureScreenIn : String -> Cmd msg
+port captureScreenIn : Value -> Cmd msg
 
 
 {-| Receive a screen capture as a URL.
@@ -476,7 +477,7 @@ updateInternal msg model =
                         Just captureOnHide ->
                             if visibility == Hidden then
                                 ( { model | captureOnHide = Nothing }
-                                , captureScreenIn captureOnHide
+                                , captureScreenIn <| captureScreenArgs "" "capture"
                                 )
 
                             else
@@ -507,12 +508,16 @@ updateInternal msg model =
         CaptureScreen displaySurface ->
             let
                 ( mdl, cmd ) =
-                    -- TODO: remove `|| True` when captureScreen is split.
                     if displaySurface /= "monitor" || True then
-                        ( model, captureScreenIn displaySurface )
+                        ( model, captureScreenIn <| JE.string displaySurface )
 
                     else
-                        ( { model | captureOnHide = Just displaySurface }, Cmd.none )
+                        -- This doesn't work, so it never runs
+                        -- (due to `|| True` above)
+                        ( { model | captureOnHide = Just displaySurface }
+                        , captureScreenIn <|
+                            captureScreenArgs displaySurface "get"
+                        )
             in
             mdl |> withCmd cmd
 
@@ -533,6 +538,14 @@ updateInternal msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+captureScreenArgs : String -> String -> Value
+captureScreenArgs displaySurface which =
+    JE.object
+        [ ( "displaySurface", JE.string displaySurface )
+        , ( "which", JE.string which )
+        ]
 
 
 receiveLocalStorage : Model -> Value -> ( Model, Cmd Msg )
@@ -604,8 +617,20 @@ receiveCaptureScreen model value =
             model |> withNoCmd
 
         Ok string ->
-            { model | capturedUrl = Just string }
-                |> withNoCmd
+            if string == "" then
+                if model.captureOnHide == Nothing then
+                    model |> withNoCmd
+
+                else
+                    -- TODO: make this enable the second call to
+                    -- the captureScreenIn port.
+                    -- As a practical matter, the race condition
+                    -- won't ever happen.
+                    model |> withNoCmd
+
+            else
+                { model | capturedUrl = Just string }
+                    |> withNoCmd
 
 
 
