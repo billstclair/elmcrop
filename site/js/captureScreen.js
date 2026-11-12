@@ -92,9 +92,6 @@
       } else {
         return;
       }
-      if (command.stream) {
-        stream = command.stream;
-      }
       captureScreen(displaySurface, which, stream).then((url) => {
         if (which == 'get') {
           stream = url;
@@ -103,7 +100,7 @@
           captureScreenOut.send(url);
         }
       }).catch((error) => {
-        console.error('Failed to captureScreen:', error);
+        console.log('Failed to captureScreen:', error);
       });
     });
   }
