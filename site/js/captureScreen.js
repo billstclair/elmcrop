@@ -13,11 +13,16 @@
 
 (function(scope) {
 
+  // TODO: split into "start", "finish", "all"
+  // "start" just does getDisplayMedia()
+  // "finish" captures the video
+  // Allows user to hide the screen between them
+  // without getting invalidStateError
   async function captureScreen(displaySurface) {
     try {
       // Request screen capture permission
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: "always",
+        video: { cursor: "never",
                  displaySurface: displaySurface
                }
       });

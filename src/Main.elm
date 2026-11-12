@@ -34,7 +34,7 @@ import Url exposing (Url)
 
 {-| Capture the screen, and send a URL to captureScreenOut.
 -}
-port captureScreenIn : Value -> Cmd msg
+port captureScreenIn : String -> Cmd msg
 
 
 {-| Receive a screen capture as a URL.
@@ -80,6 +80,7 @@ type alias Model =
     , url : Url
     , key : Key
     , visibility : Visibility
+    , captureOnHide : Maybe String
 
     -- Persistent below here
     , capturedUrl : Maybe String
@@ -113,6 +114,7 @@ init flags url key =
     , url = url
     , key = key
     , visibility = Visible
+    , captureOnHide = Nothing
     , capturedUrl = defaultCapturedUrl
     }
         |> withCmds
@@ -192,6 +194,17 @@ view model =
                 ]
             , div []
                 [ br
+                , case model.captureOnHide of
+                    Nothing ->
+                        text ""
+
+                    Just _ ->
+                        p [ style "color" "red" ]
+                            [ text <|
+                                "Hide the screen to capture ("
+                                    ++ chars.command
+                                    ++ "H)"
+                            ]
                 , if playUpDown then
                     p []
                         [ button [ onClick <| Play upMp3 ]
@@ -374,6 +387,7 @@ chars =
     { leftCurlyQuote = codestr 0x201C
     , copyright = codestr 0xA9
     , nbsp = codestr 0xA0
+    , command = codestr 0x2318
     }
 
 
@@ -452,9 +466,25 @@ updateInternal msg model =
             model |> withNoCmd
 
         ChangeVisibility visibility ->
-            { model | visibility = Debugging.log "visibility" visibility }
-                |> withCmd
-                    (if playUpDown then
+            let
+                ( mdl, cmd ) =
+                    case model.captureOnHide of
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                        Just captureOnHide ->
+                            if visibility == Hidden then
+                                ( { model | captureOnHide = Nothing }
+                                , captureScreenIn captureOnHide
+                                )
+
+                            else
+                                ( model, Cmd.none )
+            in
+            { mdl | visibility = Debugging.log "visibility" visibility }
+                |> withCmds
+                    [ cmd
+                    , if playUpDown then
                         playFile <|
                             if visibility == Visible then
                                 upMp3
@@ -462,9 +492,9 @@ updateInternal msg model =
                             else
                                 downMp3
 
-                     else
+                      else
                         Cmd.none
-                    )
+                    ]
 
         Play filename ->
             model |> withCmd (playFile filename)
@@ -474,7 +504,16 @@ updateInternal msg model =
                 |> withNoCmd
 
         CaptureScreen displaySurface ->
-            model |> withCmd (captureScreenIn <| JE.string displaySurface)
+            let
+                ( mdl, cmd ) =
+                    -- TODO: remove `|| True` when captureScreen is split.
+                    if displaySurface /= "monitor" || True then
+                        ( model, captureScreenIn displaySurface )
+
+                    else
+                        ( { model | captureOnHide = Just displaySurface }, Cmd.none )
+            in
+            mdl |> withCmd cmd
 
         TimedCaptureScreen ->
             -- TODO
