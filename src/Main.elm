@@ -142,6 +142,16 @@ playUpDown =
     False
 
 
+upMp3 : String
+upMp3 =
+    "images/up.mp3"
+
+
+downMp3 : String
+downMp3 =
+    "images/down.mp3"
+
+
 view : Model -> Document Msg
 view model =
     { title = "ElmCrop"
@@ -184,10 +194,10 @@ view model =
                 [ br
                 , if playUpDown then
                     p []
-                        [ button [ onClick <| Play "images/up.mp3" ]
+                        [ button [ onClick <| Play upMp3 ]
                             [ text "Up" ]
                         , text " "
-                        , button [ onClick <| Play "images/down.mp3" ]
+                        , button [ onClick <| Play downMp3 ]
                             [ text "Down" ]
                         ]
 
@@ -447,10 +457,10 @@ updateInternal msg model =
                     (if playUpDown then
                         playFile <|
                             if visibility == Visible then
-                                "images/up.mp3"
+                                upMp3
 
                             else
-                                "images/down.mp3"
+                                downMp3
 
                      else
                         Cmd.none
