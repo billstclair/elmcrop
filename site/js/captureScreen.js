@@ -13,39 +13,46 @@
 
 (function(scope) {
 
-  // TODO: split into "start", "finish", "all"
-  // "start" just does getDisplayMedia()
-  // "finish" captures the video
-  // Allows user to hide the screen between them
-  // without getting invalidStateError
-  async function captureScreen(displaySurface) {
+  // displaySurface is "monitor" or "window".
+  // which is 'get', 'capture', or 'both'.
+  // stream is the stream returned by the last call to captureScreen
+  // with which == 'get'.
+  async function captureScreen(displaySurface, which, stream) {
     try {
       // Request screen capture permission
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: "never",
-                 displaySurface: displaySurface
-               }
-      });
-      
-      const video = document.createElement("video");
-      video.srcObject = stream;
-      await video.play();
+      if (which != 'capture') {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { cursor: "never",
+                   displaySurface: displaySurface
+                 }
+        });
 
-      // Draw the current frame to a canvas
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0);
+        if (which == 'get') {
+          return stream;
+        }
+      }
 
-      // Convert canvas to a base64 image string
-      // (webp compesses bettern than png).
-      const imageUrl = canvas.toDataURL("image/webp");
-      
-      // Stop the stream tracks
-      stream.getTracks().forEach(track => track.stop());
-      
-      return imageUrl;
+      if (stream) {
+        const video = document.createElement("video");
+        video.srcObject = stream;
+        await video.play();
+
+        // Draw the current frame to a canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
+
+        // Convert canvas to a base64 image string
+        // (webp compesses bettern than png).
+        const imageUrl = canvas.toDataURL("image/webp");
+        
+        // Stop the stream tracks
+        stream.getTracks().forEach(track => track.stop());
+        
+        return imageUrl;
+      }
     } catch (err) {
       console.error("Error capturing screen:", err);
     }
@@ -62,17 +69,39 @@
       return;
     }
 
-    var captureScreenIn = ports.captureScreenIn;
-    var captureScreenOut = ports.captureScreenOut;
+    const captureScreenIn = ports.captureScreenIn;
+    const captureScreenOut = ports.captureScreenOut;
 
     if (!captureScreenIn || !captureScreenOut) {
       console.log("captureScreenIn or captureScreenOut port not defined.");
       return;
     }
 
-    captureScreenIn.subscribe(function(displaySurface) {
-      captureScreen(displaySurface).then((url) => {
-        captureScreenOut.send(url);
+    var stream = null;
+
+    captureScreenIn.subscribe(function(command) {
+      var displaySurface = 'monitor';
+      var which = 'both';
+      if (typeof(command) == 'string') {
+        displaySurface = command;
+      } else if (typeof(command.displaySurface) == 'string') {
+        displaySurface = command.displaySurface;
+        if (typeof(command.which) == 'string') {
+          which = command.which;
+        }
+      } else {
+        return;
+      }
+      if (command.stream) {
+        stream = command.stream;
+      }
+      captureScreen(displaySurface, which, stream).then((url) => {
+        if (which == 'get') {
+          stream = url;
+        } else {
+          stream = null;
+          captureScreenOut.send(url);
+        }
       }).catch((error) => {
         console.error('Failed to captureScreen:', error);
       });

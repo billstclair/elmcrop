@@ -171,6 +171,7 @@ view model =
                     ]
                     (buttonBar model)
                 ]
+            , br
             , table
                 [ style "width" "100%"
                 ]
