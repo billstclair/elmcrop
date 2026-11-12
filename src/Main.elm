@@ -20,6 +20,7 @@ import Browser.Events as Events exposing (Visibility(..))
 import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Debugging
+import Dict exposing (Dict)
 import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
@@ -34,6 +35,7 @@ import Url exposing (Url)
 
 {-| Capture the screen, and send a URL to captureScreenOut.
 Arg is either a string or { displaySurface: "foo", which: "bar" }
+See site/js/captureScreen.js
 -}
 port captureScreenIn : Value -> Cmd msg
 
@@ -72,6 +74,7 @@ subscriptions model =
     -- TODO: Not quite right. Doesn't become invisible when another app is selected.
     -- Try the `focusin` and `focusout` events
     , Events.onVisibilityChange ChangeVisibility
+    , Events.onResize OnResize
     ]
         |> Sub.batch
 
@@ -82,6 +85,8 @@ type alias Model =
     , key : Key
     , visibility : Visibility
     , captureOnHide : Maybe String
+    , windowSize : Maybe ( Int, Int )
+    , divViewports : Dict String Viewport --id -> Viewport
 
     -- Persistent below here
     , capturedUrl : Maybe String
@@ -98,6 +103,7 @@ type Msg
     | ReceiveCaptureScreen Value
     | InitializeModel
     | ChangeVisibility Visibility
+    | OnResize Int Int
     | Play String
     | CloseImage
     | CaptureScreen String
@@ -116,6 +122,10 @@ init flags url key =
     , key = key
     , visibility = Visible
     , captureOnHide = Nothing
+    , windowSize = Nothing
+    , divViewports = Dict.empty
+
+    -- Persistent below here
     , capturedUrl = defaultCapturedUrl
     }
         |> withCmds
@@ -194,7 +204,7 @@ view model =
                         [ viewRightColumn model ]
                     ]
                 ]
-            , div []
+            , div [ id "hidemsg" ]
                 [ br
                 , case model.captureOnHide of
                     Nothing ->
@@ -497,6 +507,10 @@ updateInternal msg model =
                       else
                         Cmd.none
                     ]
+
+        OnResize w h ->
+            -- TODO
+            model |> withNoCmd
 
         Play filename ->
             model |> withCmd (playFile filename)
