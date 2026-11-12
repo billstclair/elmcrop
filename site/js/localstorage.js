@@ -44,7 +44,10 @@
         } else {
           var str = JSON.stringify(val);
           if (typeof(str) == 'string') {
-            storage.setItem(prefix + "." + key, str);
+            try {
+              storage.setItem(prefix + "." + key, str);
+            } catch(e) {
+            }
           }
         }
       } else if (getOrPut == "get") {

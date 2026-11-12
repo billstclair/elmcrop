@@ -39,7 +39,8 @@
       ctx.drawImage(video, 0, 0);
 
       // Convert canvas to a base64 image string
-      const imageUrl = canvas.toDataURL("image/png");
+      // (webp compesses bettern than png).
+      const imageUrl = canvas.toDataURL("image/webp");
       
       // Stop the stream tracks
       stream.getTracks().forEach(track => track.stop());
