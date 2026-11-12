@@ -71,9 +71,7 @@
     }
 
     captureScreenIn.subscribe(function(displaySurface) {
-      var url = null;
-      captureScreen(displaySurface).then((urlDePromised) => {
-        url = urlDePromised;
+      captureScreen(displaySurface).then((url) => {
         captureScreenOut.send(url);
       }).catch((error) => {
         console.error('Failed to captureScreen:', error);
