@@ -56,6 +56,21 @@
             // Ports
             // A couple of representative port definitions.
             // Add your own here.
+
+            // port playAudio
+            var playFile = app && app.ports && app.ports.playFile
+            if (playFile) {
+              playFile.subscribe(function(filename) {
+                try {
+                  const audio = new Audio(filename);
+                  if (audio) {
+                    audio.play();
+                  } 
+                } catch (e) {
+                }
+              })
+            }
+
             // port selectAll : String -> Cmd msg
             var selectAll = app && app.ports && app.ports.selectAll;
             if (selectAll) {

@@ -20,7 +20,7 @@ import Browser.Events as Events exposing (Visibility(..))
 import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Debugging
-import Html exposing (Html, a, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
+import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
@@ -40,6 +40,9 @@ port captureScreenIn : Value -> Cmd msg
 {-| Receive a screen capture as a URL.
 -}
 port captureScreenOut : (Value -> msg) -> Sub msg
+
+
+port playFile : String -> Cmd msg
 
 
 port selectAll : String -> Cmd msg
@@ -93,6 +96,7 @@ type Msg
     | ReceiveCaptureScreen Value
     | InitializeModel
     | ChangeVisibility Visibility
+    | Play String
     | CloseImage
     | CaptureScreen String
     | TimedCaptureScreen
@@ -133,6 +137,11 @@ br =
     Html.br [] []
 
 
+playUpDown : Bool
+playUpDown =
+    False
+
+
 view : Model -> Document Msg
 view model =
     { title = "ElmCrop"
@@ -171,9 +180,22 @@ view model =
                         [ viewRightColumn model ]
                     ]
                 ]
-            , div [ id "footer" ]
+            , div []
                 [ br
-                , p []
+                , if playUpDown then
+                    p []
+                        [ button [ onClick <| Play "images/up.mp3" ]
+                            [ text "Up" ]
+                        , text " "
+                        , button [ onClick <| Play "images/down.mp3" ]
+                            [ text "Down" ]
+                        ]
+
+                  else
+                    text ""
+                ]
+            , div [ id "footer" ]
+                [ p []
                     [ a
                         [ href "#"
                         , onClick ReloadFromServer
@@ -421,7 +443,21 @@ updateInternal msg model =
 
         ChangeVisibility visibility ->
             { model | visibility = Debugging.log "visibility" visibility }
-                |> withNoCmd
+                |> withCmd
+                    (if playUpDown then
+                        playFile <|
+                            if visibility == Visible then
+                                "images/up.mp3"
+
+                            else
+                                "images/down.mp3"
+
+                     else
+                        Cmd.none
+                    )
+
+        Play filename ->
+            model |> withCmd (playFile filename)
 
         CloseImage ->
             { model | capturedUrl = defaultCapturedUrl }
