@@ -63,9 +63,7 @@
               playFile.subscribe(function(filename) {
                 try {
                   const audio = new Audio(filename);
-                  if (audio) {
-                    audio.play();
-                  } 
+                  audio.play();
                 } catch (e) {
                 }
               })
