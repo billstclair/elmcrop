@@ -86,7 +86,7 @@ type alias Model =
     , visibility : Visibility
     , captureOnHide : Maybe String
     , windowSize : Maybe ( Int, Int )
-    , divViewports : Dict String Viewport --id -> Viewport
+    , divViewports : List Viewport
 
     -- Persistent below here
     , capturedUrl : Maybe String
@@ -103,7 +103,9 @@ type Msg
     | ReceiveCaptureScreen Value
     | InitializeModel
     | ChangeVisibility Visibility
+    | GetViewport Viewport
     | OnResize Int Int
+    | GetViewportOf (Result Dom.Error Viewport)
     | Play String
     | CloseImage
     | CaptureScreen String
@@ -123,7 +125,7 @@ init flags url key =
     , visibility = Visible
     , captureOnHide = Nothing
     , windowSize = Nothing
-    , divViewports = Dict.empty
+    , divViewports = []
 
     -- Persistent below here
     , capturedUrl = defaultCapturedUrl
@@ -131,6 +133,7 @@ init flags url key =
         |> withCmds
             [ Task.perform RecordTime Time.now
             , LocalStorage.setPrefix "elmcrop"
+            , Task.perform GetViewport Dom.getViewport
             ]
 
 
@@ -520,9 +523,28 @@ updateInternal msg model =
                         Cmd.none
                     ]
 
+        GetViewport viewport ->
+            let
+                { width, height } =
+                    viewport.scene
+            in
+            gotWindowSize model (round width) (round height)
+
         OnResize w h ->
-            -- TODO
-            model |> withNoCmd
+            gotWindowSize model w h
+
+        GetViewportOf result ->
+            let
+                r =
+                    Debugging.log "GetViewportOf" result
+            in
+            case result of
+                Err err ->
+                    model |> withNoCmd
+
+                Ok viewport ->
+                    { model | divViewports = viewport :: model.divViewports }
+                        |> withNoCmd
 
         Play filename ->
             model |> withCmd (playFile filename)
@@ -564,6 +586,30 @@ updateInternal msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+gotWindowSize : Model -> Int -> Int -> ( Model, Cmd Msg )
+gotWindowSize model w h =
+    let
+        wwhh =
+            Debugging.log "gotWindowSize" ( w, h )
+
+        cmd =
+            Cmd.batch
+                [ getViewportOfCmd "top"
+                , getViewportOfCmd "bottom"
+                ]
+    in
+    { model
+        | windowSize = Just wwhh
+        , divViewports = []
+    }
+        |> withCmd cmd
+
+
+getViewportOfCmd : String -> Cmd Msg
+getViewportOfCmd name =
+    Task.attempt GetViewportOf <| Dom.getViewportOf name
 
 
 captureScreenArgs : String -> String -> Value
