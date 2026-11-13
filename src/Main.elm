@@ -171,40 +171,46 @@ view model =
     , body =
         [ div
             [ style "background-color" "#e8e8e8" ]
-            [ div
-                [ style "background-color" "lightgray"
-                , style "margin" "0"
-                ]
+            [ div [ id "top" ]
                 [ div
-                    [ style "width" "100%"
-                    , style "padding" "10px"
-                    , id "buttonBar"
+                    [ style "background-color" "lightgray"
+                    , style "margin" "0"
                     ]
-                    (buttonBar model)
+                    [ div
+                        [ style "width" "100%"
+                        , style "padding" "10px"
+                        , id "buttonBar"
+                        ]
+                        (buttonBar model)
+                    ]
+                , br
                 ]
-            , br
-            , table
+            ]
+        , table
+            [ style "width" "100%"
+            , style "height" "500px"
+            , style "margin-right" "10px"
+            ]
+            -- TODO
+            [ tr
                 [ style "width" "100%"
                 ]
-                -- TODO
-                [ tr
-                    [ style "width" "100%"
+                [ td
+                    [ style "width" "49%"
                     ]
-                    [ td
-                        [ style "width" "49%"
-                        ]
-                        [ viewLeftColumn model ]
-                    , td
-                        [ style "width" "2%"
-                        ]
-                        [ text "" ]
-                    , td
-                        [ style "width" "49%"
-                        ]
-                        [ viewRightColumn model ]
+                    [ viewLeftColumn model ]
+                , td
+                    [ style "width" "2%"
                     ]
+                    [ text "" ]
+                , td
+                    [ style "width" "49%"
+                    ]
+                    [ viewRightColumn model ]
                 ]
-            , div [ id "hidemsg" ]
+            ]
+        , div [ id "bottom" ]
+            [ div [ id "hidemsg" ]
                 [ br
                 , case model.captureOnHide of
                     Nothing ->
@@ -270,12 +276,15 @@ view model =
 viewLeftColumn : Model -> Html Msg
 viewLeftColumn model =
     -- TODO compute height to make content fill window
-    div [ style "height" "256px" ]
+    div
+        [ style "height" "500px"
+        ]
         [ text "Drop picture here"
         , div
             [ style "width" "100%"
             , style "height" "100%"
             , style "background-color" "white"
+            , style "border" "1px, solid"
             ]
             [ case model.capturedUrl of
                 Nothing ->
@@ -296,12 +305,15 @@ viewLeftColumn model =
 
 viewRightColumn : Model -> Html Msg
 viewRightColumn model =
-    div [ style "height" "256px" ]
+    div
+        [ style "height" "500px"
+        ]
         [ text "Drag this off"
         , div
             [ style "width" "100%"
             , style "height" "100%"
             , style "background-color" "blue"
+            , style "border" "1px, solid"
             ]
             []
         ]
