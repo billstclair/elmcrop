@@ -139,6 +139,10 @@ delayedCmds time cmds =
                 ( cmdsTail, delayedCmd :: delayedCmdsTail )
 
 
+type alias WindowSize =
+    ( Int, Int )
+
+
 type alias Model =
     { now : Int
     , url : Url
@@ -146,11 +150,11 @@ type alias Model =
     , delays : List DelayedCmd
     , visibility : Visibility
     , captureOnHide : Maybe String
-    , windowSize : Maybe ( Int, Int )
-    , divViewports : Dict String Viewport
-    , imgSizes : Dict String ImgSize
 
     -- Persistent below here
+    , windowSize : Maybe WindowSize
+    , divViewports : Dict String Viewport
+    , imgSizes : Dict String ImgSize
     , capturedUrl : Maybe String
     }
 
@@ -642,8 +646,7 @@ updateInternal msg model =
                 Ok viewport ->
                     { model
                         | divViewports =
-                            Debugging.log "divViewPorts" <|
-                                Dict.insert id viewport model.divViewports
+                            Dict.insert id viewport model.divViewports
                     }
                         |> withNoCmd
 
@@ -858,18 +861,30 @@ type alias Pair =
 {-| Must be `comparable` for `udpate` to write to `LocalStorage` only when necessary.
 -}
 type alias SavedModel =
-    { capturedUrl : Maybe String
+    { windowSize : Maybe WindowSize
+    , divViewports : Dict String Viewport
+    , imgSizes : Dict String ImgSize
+    , capturedUrl : Maybe String
     }
 
 
 modelToSavedModel : Model -> SavedModel
 modelToSavedModel model =
-    { capturedUrl = model.capturedUrl }
+    { windowSize = model.windowSize
+    , divViewports = model.divViewports
+    , imgSizes = model.imgSizes
+    , capturedUrl = model.capturedUrl
+    }
 
 
 savedModelToModel : SavedModel -> Model -> Model
 savedModelToModel savedModel model =
-    { model | capturedUrl = savedModel.capturedUrl }
+    { model
+        | windowSize = savedModel.windowSize
+        , divViewports = savedModel.divViewports
+        , imgSizes = savedModel.imgSizes
+        , capturedUrl = savedModel.capturedUrl
+    }
 
 
 
@@ -904,18 +919,125 @@ encodeMaybe encoder maybeX =
 encodeSavedModel : SavedModel -> Value
 encodeSavedModel savedModel =
     JE.object
-        [ ( "capturedUrl", encodeMaybe JE.string <| savedModel.capturedUrl ) ]
+        [ ( "windowSize", encodeMaybe windowSizeEncoder savedModel.windowSize )
+        , ( "divViewports", JE.dict identity encodeViewport savedModel.divViewports )
+        , ( "imgSizes", JE.dict identity encodeImgSize savedModel.imgSizes )
+        , ( "capturedUrl", encodeMaybe JE.string savedModel.capturedUrl )
+        ]
 
 
 savedModelDecoder : Decoder SavedModel
 savedModelDecoder =
     JD.succeed SavedModel
+        |> optional "windowSize" (JD.nullable windowSizeDecoder) Nothing
+        |> optional "divViewports" (JD.dict viewportDecoder) Dict.empty
+        |> optional "imgSizes" (JD.dict imgSizeDecoder) Dict.empty
         |> required "capturedUrl" (JD.nullable JD.string)
 
 
 decodeSavedModel : Value -> Result JD.Error SavedModel
 decodeSavedModel value =
     JD.decodeValue savedModelDecoder value
+
+
+windowSizeEncoder : WindowSize -> Value
+windowSizeEncoder ( width, height ) =
+    JE.object
+        [ ( "w", JE.int width )
+        , ( "h", JE.int height )
+        ]
+
+
+type alias WindowSizeRecord =
+    { w : Int
+    , h : Int
+    }
+
+
+windowSizeDecoder : Decoder WindowSize
+windowSizeDecoder =
+    (JD.succeed WindowSizeRecord
+        |> required "w" JD.int
+        |> required "h" JD.int
+    )
+        |> JD.andThen
+            (\rec ->
+                JD.succeed ( rec.w, rec.h )
+            )
+
+
+type alias ViewportScene =
+    { width : Float
+    , height : Float
+    }
+
+
+encodeViewportScene : ViewportScene -> Value
+encodeViewportScene scene =
+    JE.object
+        [ ( "width", JE.float scene.width )
+        , ( "height", JE.float scene.height )
+        ]
+
+
+viewportSceneDecoder : Decoder ViewportScene
+viewportSceneDecoder =
+    JD.succeed ViewportScene
+        |> required "width" JD.float
+        |> required "height" JD.float
+
+
+type alias ViewportViewport =
+    { x : Float
+    , y : Float
+    , width : Float
+    , height : Float
+    }
+
+
+encodeViewportViewport : ViewportViewport -> Value
+encodeViewportViewport vpvp =
+    JE.object
+        [ ( "x", JE.float vpvp.x )
+        , ( "y", JE.float vpvp.y )
+        , ( "width", JE.float vpvp.width )
+        , ( "height", JE.float vpvp.height )
+        ]
+
+
+viewportViewportDecoder : Decoder ViewportViewport
+viewportViewportDecoder =
+    JD.succeed ViewportViewport
+        |> required "x" JD.float
+        |> required "y" JD.float
+        |> required "width" JD.float
+        |> required "height" JD.float
+
+
+encodeViewport : Viewport -> Value
+encodeViewport viewport =
+    JE.object
+        [ ( "scene", encodeViewportScene viewport.scene )
+        , ( "viewport", encodeViewportViewport viewport.viewport )
+        ]
+
+
+viewportDecoder : Decoder Viewport
+viewportDecoder =
+    JD.succeed Viewport
+        |> required "scene" viewportSceneDecoder
+        |> required "viewport" viewportViewportDecoder
+
+
+encodeImgSize : ImgSize -> Value
+encodeImgSize imgSize =
+    JE.object
+        [ ( "id", JE.string imgSize.id )
+        , ( "width", JE.int imgSize.width )
+        , ( "naturalWidth", JE.int imgSize.naturalWidth )
+        , ( "height", JE.int imgSize.height )
+        , ( "naturalHeight", JE.int imgSize.naturalHeight )
+        ]
 
 
 imgSizeDecoder : Decoder ImgSize
