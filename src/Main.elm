@@ -81,7 +81,7 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    [ Time.every 1000 RecordTime
+    [ Time.every 100 RecordTime
     , LocalStorage.localStorageOut ReceiveLocalStorage
     , captureScreenOut ReceiveCaptureScreen
     , imgSizeOut ReceiveImgSize
@@ -94,10 +94,46 @@ subscriptions model =
         |> Sub.batch
 
 
+type alias DelayedCmd =
+    { time : Int
+    , cmd : Cmd Msg
+    }
+
+
+addDelay : Model -> Int -> Cmd Msg -> Model
+addDelay model delay cmd =
+    { model
+        | delays =
+            { time = model.now + delay
+            , cmd = cmd
+            }
+                :: model.delays
+    }
+
+
+delayedCmds : Int -> List DelayedCmd -> ( List (Cmd Msg), List DelayedCmd )
+delayedCmds time cmds =
+    case cmds of
+        [] ->
+            ( [], [] )
+
+        delayedCmd :: tail ->
+            let
+                ( cmdsTail, delayedCmdsTail ) =
+                    delayedCmds time tail
+            in
+            if time <= delayedCmd.time then
+                ( delayedCmd.cmd :: cmdsTail, delayedCmdsTail )
+
+            else
+                ( cmdsTail, delayedCmd :: delayedCmdsTail )
+
+
 type alias Model =
     { now : Int
     , url : Url
     , key : Key
+    , delays : List DelayedCmd
     , visibility : Visibility
     , captureOnHide : Maybe String
     , windowSize : Maybe ( Int, Int )
@@ -139,6 +175,7 @@ init flags url key =
     { now = 0
     , url = url
     , key = key
+    , delays = []
     , visibility = Visible
     , captureOnHide = Nothing
     , windowSize = Nothing
@@ -152,7 +189,6 @@ init flags url key =
             [ Task.perform RecordTime Time.now
             , LocalStorage.setPrefix "elmcrop"
             , Task.perform GetViewport Dom.getViewport
-            , imgSizeIn "leftImg"
             ]
 
 
@@ -497,11 +533,22 @@ updateInternal msg model =
             let
                 now =
                     Time.posixToMillis posix
+
+                ( cmds, delays ) =
+                    delayedCmds now model.delays
             in
             { model
                 | now = now
+                , delays = delays
             }
-                |> withNoCmd
+                |> (if model.now == 0 then
+                        \mdl ->
+                            addDelay mdl 200 (imgSizeIn "leftImg")
+
+                    else
+                        identity
+                   )
+                |> withCmds cmds
 
         ReceiveLocalStorage value ->
             receiveLocalStorage model value
@@ -574,7 +621,10 @@ updateInternal msg model =
 
         CloseImage ->
             { model | capturedUrl = defaultCapturedUrl }
-                |> withCmd (imgSizeIn "leftImg")
+                |> (\mdl ->
+                        addDelay mdl 200 (imgSizeIn "leftImg")
+                            |> withNoCmd
+                   )
 
         CaptureScreen displaySurface ->
             let
@@ -725,13 +775,16 @@ receiveCaptureScreen model value =
 
             else
                 { model | capturedUrl = Just string }
-                    |> withCmd (imgSizeIn "leftImg")
+                    |> (\mdl ->
+                            addDelay mdl 200 (imgSizeIn "leftImg")
+                                |> withNoCmd
+                       )
 
 
 type alias ImgSize =
     { id : String
     , width : Int
-    , naturalWigth : Int
+    , naturalWidth : Int
     , height : Int
     , naturalHeight : Int
     }
@@ -739,8 +792,24 @@ type alias ImgSize =
 
 receiveImgSize : Model -> Value -> ( Model, Cmd Msg )
 receiveImgSize model value =
-    -- TODO
-    model |> withNoCmd
+    let
+        json =
+            Debugging.log "receiveImgSize" <| JE.encode 0 value
+    in
+    case decodeImgSize value of
+        Err _ ->
+            model |> withNoCmd
+
+        Ok imgSize ->
+            let
+                is =
+                    Debugging.log "  decodeImgSize" imgSize
+            in
+            { model
+                | imgSizes =
+                    Dict.insert imgSize.id imgSize model.imgSizes
+            }
+                |> withNoCmd
 
 
 
@@ -814,3 +883,18 @@ savedModelDecoder =
 decodeSavedModel : Value -> Result JD.Error SavedModel
 decodeSavedModel value =
     JD.decodeValue savedModelDecoder value
+
+
+imgSizeDecoder : Decoder ImgSize
+imgSizeDecoder =
+    JD.succeed ImgSize
+        |> required "id" JD.string
+        |> required "width" JD.int
+        |> required "naturalWidth" JD.int
+        |> required "height" JD.int
+        |> required "naturalHeight" JD.int
+
+
+decodeImgSize : Value -> Result JD.Error ImgSize
+decodeImgSize value =
+    JD.decodeValue imgSizeDecoder value

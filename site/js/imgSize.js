@@ -40,6 +40,8 @@
                           height: img.height,
                           naturalHeight: img.naturalHeight
                         });
+      } else {
+        console.log("Can't find element with id:", id);
       }
     });
   }
