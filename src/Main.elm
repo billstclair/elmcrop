@@ -79,9 +79,19 @@ main =
         }
 
 
+timeSampleRate : Float
+timeSampleRate =
+    100
+
+
+minimumDelay : Int
+minimumDelay =
+    2 * round timeSampleRate
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    [ Time.every 100 RecordTime
+    [ Time.every timeSampleRate RecordTime
     , LocalStorage.localStorageOut ReceiveLocalStorage
     , captureScreenOut ReceiveCaptureScreen
     , imgSizeOut ReceiveImgSize
@@ -542,8 +552,7 @@ updateInternal msg model =
                 , delays = delays
             }
                 |> (if model.now == 0 then
-                        \mdl ->
-                            addDelay mdl 200 (imgSizeIn "leftImg")
+                        addImgSize "leftImg"
 
                     else
                         identity
@@ -621,10 +630,8 @@ updateInternal msg model =
 
         CloseImage ->
             { model | capturedUrl = defaultCapturedUrl }
-                |> (\mdl ->
-                        addDelay mdl 200 (imgSizeIn "leftImg")
-                            |> withNoCmd
-                   )
+                |> addImgSize "leftImg"
+                |> withNoCmd
 
         CaptureScreen displaySurface ->
             let
@@ -659,6 +666,11 @@ updateInternal msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+addImgSize : String -> Model -> Model
+addImgSize id model =
+    addDelay model minimumDelay (imgSizeIn id)
 
 
 gotWindowSize : Model -> Int -> Int -> ( Model, Cmd Msg )
@@ -775,10 +787,8 @@ receiveCaptureScreen model value =
 
             else
                 { model | capturedUrl = Just string }
-                    |> (\mdl ->
-                            addDelay mdl 200 (imgSizeIn "leftImg")
-                                |> withNoCmd
-                       )
+                    |> addImgSize "leftImg"
+                    |> withNoCmd
 
 
 type alias ImgSize =
