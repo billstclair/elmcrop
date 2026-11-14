@@ -147,7 +147,7 @@ type alias Model =
     , visibility : Visibility
     , captureOnHide : Maybe String
     , windowSize : Maybe ( Int, Int )
-    , divViewports : List Viewport
+    , divViewports : Dict String Viewport
     , imgSizes : Dict String ImgSize
 
     -- Persistent below here
@@ -168,7 +168,7 @@ type Msg
     | ChangeVisibility Visibility
     | GetViewport Viewport
     | OnResize Int Int
-    | GetViewportOf (Result Dom.Error Viewport)
+    | GetViewportOf String (Result Dom.Error Viewport)
     | Play String
     | CloseImage
     | CaptureScreen String
@@ -189,7 +189,7 @@ init flags url key =
     , visibility = Visible
     , captureOnHide = Nothing
     , windowSize = Nothing
-    , divViewports = []
+    , divViewports = Dict.empty
     , imgSizes = Dict.empty
 
     -- Persistent below here
@@ -236,23 +236,45 @@ downMp3 =
 view : Model -> Document Msg
 view model =
     { title = "ElmCrop"
-    , body =
-        [ div
-            [ style "background-color" "#e8e8e8" ]
-            [ div [ id "top" ]
-                [ div
-                    [ style "background-color" "lightgray"
-                    , style "margin" "0"
-                    ]
-                    [ div
-                        [ style "width" "100%"
-                        , style "padding" "10px"
-                        , id "buttonBar"
-                        ]
-                        (buttonBar model)
-                    ]
-                , br
+    , body = viewBody model
+    }
+
+
+viewBody : Model -> List (Html Msg)
+viewBody model =
+    let
+        ( windowWidth, windowHeight ) =
+            case model.windowSize of
+                Just size ->
+                    size
+
+                Nothing ->
+                    -- Temporary, should come from restored model
+                    ( 400, 400 )
+
+        ( wws, whs ) =
+            ( String.fromInt windowWidth ++ "px"
+            , String.fromInt windowHeight ++ "px"
+            )
+    in
+    [ div
+        [ style "background-color" "#e8e8e8"
+        , style "width" wws
+        , style "height" whs
+        ]
+        [ div [ id "top" ]
+            [ div
+                [ style "background-color" "lightgray"
+                , style "margin" "0"
                 ]
+                [ div
+                    [ style "width" "100%"
+                    , style "padding" "10px"
+                    , id "buttonBar"
+                    ]
+                    (buttonBar model)
+                ]
+            , br
             ]
         , table
             [ style "width" "100%"
@@ -260,19 +282,20 @@ view model =
             , style "margin-right" "10px"
             ]
             -- TODO
-            [ tr
-                [ style "width" "100%"
-                ]
+            [ tr [ style "width" "100%" ]
                 [ td
                     [ style "width" "49%"
+                    , style "height" "490px"
                     ]
                     [ viewLeftColumn model ]
                 , td
                     [ style "width" "2%"
+                    , style "height" "100%"
                     ]
                     [ text "" ]
                 , td
                     [ style "width" "49%"
+                    , style "height" "100%"
                     ]
                     [ viewRightColumn model ]
                 ]
@@ -338,19 +361,17 @@ view model =
                 ]
             ]
         ]
-    }
+    ]
 
 
 viewLeftColumn : Model -> Html Msg
 viewLeftColumn model =
     -- TODO compute height to make content fill window
-    div
-        [ style "height" "500px"
-        ]
-        [ text "Drop picture here"
+    div []
+        [ div [ id "dropHere" ]
+            [ text "Drop picture here" ]
         , div
-            [ style "width" "100%"
-            , style "height" "100%"
+            [ style "height" "490px"
             , style "background-color" "white"
             , style "border" "1px, solid"
             ]
@@ -374,13 +395,10 @@ viewLeftColumn model =
 
 viewRightColumn : Model -> Html Msg
 viewRightColumn model =
-    div
-        [ style "height" "500px"
-        ]
+    div []
         [ text "Drag this off"
         , div
-            [ style "width" "100%"
-            , style "height" "100%"
+            [ style "height" "490px"
             , style "background-color" "blue"
             , style "border" "1px, solid"
             ]
@@ -612,17 +630,17 @@ updateInternal msg model =
         OnResize w h ->
             gotWindowSize model w h
 
-        GetViewportOf result ->
+        GetViewportOf id result ->
             let
                 r =
-                    Debugging.log "GetViewportOf" result
+                    Debugging.log ("GetViewportOf " ++ id) result
             in
             case result of
                 Err err ->
                     model |> withNoCmd
 
                 Ok viewport ->
-                    { model | divViewports = viewport :: model.divViewports }
+                    { model | divViewports = Dict.insert id viewport model.divViewports }
                         |> withNoCmd
 
         Play filename ->
@@ -683,18 +701,19 @@ gotWindowSize model w h =
             Cmd.batch
                 [ getViewportOfCmd "top"
                 , getViewportOfCmd "bottom"
+                , getViewportOfCmd "dropHere"
                 ]
     in
     { model
         | windowSize = Just wwhh
-        , divViewports = []
+        , divViewports = Dict.empty
     }
         |> withCmd cmd
 
 
 getViewportOfCmd : String -> Cmd Msg
 getViewportOfCmd name =
-    Task.attempt GetViewportOf <| Dom.getViewportOf name
+    Task.attempt (GetViewportOf name) <| Dom.getViewportOf name
 
 
 captureScreenArgs : String -> String -> Value
