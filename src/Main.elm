@@ -45,6 +45,20 @@ port captureScreenIn : Value -> Cmd msg
 port captureScreenOut : (Value -> msg) -> Sub msg
 
 
+{-| Compute <img> size.
+-}
+port imgSizeIn : String -> Cmd msg
+
+
+{-| Receive:
+{ id: <id>,
+width: <number>, natural-width: <number>,
+height: <number>, natural-height: <number>
+}
+-}
+port imgSizeOut : (Value -> msg) -> Sub msg
+
+
 port playFile : String -> Cmd msg
 
 
@@ -70,6 +84,7 @@ subscriptions model =
     [ Time.every 1000 RecordTime
     , LocalStorage.localStorageOut ReceiveLocalStorage
     , captureScreenOut ReceiveCaptureScreen
+    , imgSizeOut ReceiveImgSize
 
     -- TODO: Not quite right. Doesn't become invisible when another app is selected.
     -- Try the `focusin` and `focusout` events
@@ -87,6 +102,7 @@ type alias Model =
     , captureOnHide : Maybe String
     , windowSize : Maybe ( Int, Int )
     , divViewports : List Viewport
+    , imgSizes : Dict String ImgSize
 
     -- Persistent below here
     , capturedUrl : Maybe String
@@ -101,6 +117,7 @@ type Msg
     | RecordTime Posix
     | ReceiveLocalStorage Value
     | ReceiveCaptureScreen Value
+    | ReceiveImgSize Value
     | InitializeModel
     | ChangeVisibility Visibility
     | GetViewport Viewport
@@ -126,6 +143,7 @@ init flags url key =
     , captureOnHide = Nothing
     , windowSize = Nothing
     , divViewports = []
+    , imgSizes = Dict.empty
 
     -- Persistent below here
     , capturedUrl = defaultCapturedUrl
@@ -134,6 +152,7 @@ init flags url key =
             [ Task.perform RecordTime Time.now
             , LocalStorage.setPrefix "elmcrop"
             , Task.perform GetViewport Dom.getViewport
+            , imgSizeIn "leftImg"
             ]
 
 
@@ -297,6 +316,7 @@ viewLeftColumn model =
                     -- TODO Drag image that is too big to fit
                     img
                         [ src capturedUrl
+                        , id "leftImg"
                         , style "object-fit" "cover"
                         , style "width" "100%"
                         , style "height" "100%"
@@ -489,6 +509,9 @@ updateInternal msg model =
         ReceiveCaptureScreen value ->
             receiveCaptureScreen model value
 
+        ReceiveImgSize value ->
+            receiveImgSize model value
+
         InitializeModel ->
             model |> withNoCmd
 
@@ -551,7 +574,7 @@ updateInternal msg model =
 
         CloseImage ->
             { model | capturedUrl = defaultCapturedUrl }
-                |> withNoCmd
+                |> withCmd (imgSizeIn "leftImg")
 
         CaptureScreen displaySurface ->
             let
@@ -702,7 +725,22 @@ receiveCaptureScreen model value =
 
             else
                 { model | capturedUrl = Just string }
-                    |> withNoCmd
+                    |> withCmd (imgSizeIn "leftImg")
+
+
+type alias ImgSize =
+    { id : String
+    , width : Int
+    , naturalWigth : Int
+    , height : Int
+    , naturalHeight : Int
+    }
+
+
+receiveImgSize : Model -> Value -> ( Model, Cmd Msg )
+receiveImgSize model value =
+    -- TODO
+    model |> withNoCmd
 
 
 
