@@ -640,7 +640,11 @@ updateInternal msg model =
                     model |> withNoCmd
 
                 Ok viewport ->
-                    { model | divViewports = Dict.insert id viewport model.divViewports }
+                    { model
+                        | divViewports =
+                            Debugging.log "divViewPorts" <|
+                                Dict.insert id viewport model.divViewports
+                    }
                         |> withNoCmd
 
         Play filename ->
