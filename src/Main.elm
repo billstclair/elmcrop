@@ -492,7 +492,7 @@ viewLeftColumn model viewSizes =
         [ div [ id "dropHere" ]
             [ text "Drop picture here" ]
         , div
-            [ style "height" <| px viewSizes.tableHeight
+            [ style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "white"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
@@ -519,7 +519,7 @@ viewRightColumn model viewSizes =
     div []
         [ text "Drag this off"
         , div
-            [ style "height" <| px viewSizes.tableHeight
+            [ style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "blue"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
