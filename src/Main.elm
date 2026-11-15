@@ -703,8 +703,7 @@ updateInternal msg model =
                     Time.posixToMillis posix
 
                 ( cmds, delays ) =
-                    Debugging.log "delayedCmds" <|
-                        delayedCmds now model.delays
+                    delayedCmds now model.delays
             in
             { model
                 | now = now
