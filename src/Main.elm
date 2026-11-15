@@ -237,6 +237,103 @@ downMp3 =
     "images/down.mp3"
 
 
+type alias ViewSizes =
+    { width : Int
+    , height : Int
+    , topHeight : Int
+    , dropHereHeight : Int --"Drop picture here", "Drag this off"
+    , tableHeight : Int
+    , leftColumnWidth : Int
+    , centerColumnWidth : Int
+    , rightColumnWidth : Int
+    , bottomHeight : Int
+    }
+
+
+zeroViewport : Viewport
+zeroViewport =
+    { scene =
+        { width = 0
+        , height = 0
+        }
+    , viewport =
+        { x = 0
+        , y = 0
+        , width = 0
+        , height = 0
+        }
+    }
+
+
+computeViewSizes : Model -> ViewSizes
+computeViewSizes model =
+    let
+        divViewports =
+            model.divViewports
+
+        topViewport =
+            case Dict.get "top" divViewports of
+                Just top ->
+                    top
+
+                Nothing ->
+                    zeroViewport
+
+        bottomViewport =
+            case Dict.get "bottom" divViewports of
+                Just bottom ->
+                    bottom
+
+                Nothing ->
+                    zeroViewport
+
+        dropHereViewport =
+            case Dict.get "dropHere" divViewports of
+                Just dropHere ->
+                    dropHere
+
+                Nothing ->
+                    zeroViewport
+
+        ( width, height ) =
+            case model.windowSize of
+                Just size ->
+                    size
+
+                Nothing ->
+                    ( 1024, 768 )
+
+        topHeight =
+            round topViewport.viewport.height
+
+        bottomHeight =
+            round bottomViewport.viewport.height
+
+        dropHereHeight =
+            round dropHereViewport.viewport.height
+
+        centerColumnWidth =
+            10
+
+        -- TODO: drag center column to resize table
+        leftColumnWidth =
+            (width - centerColumnWidth) // 2
+
+        rightColumnWidth =
+            leftColumnWidth
+    in
+    { width = width
+    , height = height
+    , topHeight = topHeight
+    , dropHereHeight = dropHereHeight
+    , tableHeight = height - topHeight - bottomHeight - dropHereHeight
+    , leftColumnWidth = leftColumnWidth
+    , centerColumnWidth = centerColumnWidth
+    , rightColumnWidth = rightColumnWidth
+    , bottomHeight = bottomHeight
+    }
+
+
 view : Model -> Document Msg
 view model =
     { title = "ElmCrop"
