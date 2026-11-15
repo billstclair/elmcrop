@@ -1,13 +1,17 @@
 ----------------------------------------------------------------------
 --
 -- Main.elm
--- elmcrop - Clone of EasyCrop, in Elm, on the web.
+-- ElmCrop - Clone of EasyCrop, in Elm, on the web.
 -- Copyright (c) 2026 Bill St. Clair <billstclair@gmail.com>
 -- Some rights reserved.
 -- Distributed under the MIT License
 -- See LICENSE
 --
-----------------------------------------------------------------------
+-- TODO:
+--
+-- Sometimes the capturedUrl fails to convert. Don't know why yet.
+--
+-------------------------------------------------------------------------------
 
 
 port module Main exposing (main)
@@ -123,20 +127,24 @@ addDelay model delay cmd =
 
 delayedCmds : Int -> List DelayedCmd -> ( List (Cmd Msg), List DelayedCmd )
 delayedCmds time cmds =
-    case cmds of
-        [] ->
-            ( [], [] )
+    let
+        loop nowCmds cmdsTail =
+            case cmdsTail of
+                [] ->
+                    ( List.reverse nowCmds, [] )
 
-        delayedCmd :: tail ->
-            let
-                ( cmdsTail, delayedCmdsTail ) =
-                    delayedCmds time tail
-            in
-            if time <= delayedCmd.time then
-                ( delayedCmd.cmd :: cmdsTail, delayedCmdsTail )
+                delayedCmd :: tail ->
+                    let
+                        ( cmdsTail2, delayedCmdsTail ) =
+                            loop nowCmds tail
+                    in
+                    if time <= delayedCmd.time then
+                        ( delayedCmd.cmd :: cmdsTail2, delayedCmdsTail )
 
-            else
-                ( cmdsTail, delayedCmd :: delayedCmdsTail )
+                    else
+                        ( cmdsTail2, delayedCmd :: delayedCmdsTail )
+    in
+    loop [] cmds
 
 
 type alias WindowSize =
@@ -326,7 +334,8 @@ computeViewSizes model =
             1
 
         tableWidth =
-            width - tableRightMargin
+            -- the 10 is from I know not where
+            width - tableRightMargin - 10
 
         -- TODO: drag center column to resize table
         leftColumnWidth =
@@ -344,7 +353,9 @@ computeViewSizes model =
     , height = height
     , topHeight = topHeight
     , dropHereHeight = dropHereHeight
-    , tableHeight = height - topHeight - bottomHeight - dropHereHeight
+
+    -- the 10 is from I know not where
+    , tableHeight = height - topHeight - bottomHeight - dropHereHeight - 10
     , tableWidth = tableWidth
     , borderWidth = borderWidth
     , tableRightMargin = tableRightMargin
@@ -380,15 +391,15 @@ viewBody model =
         ]
         [ div
             [ id "top"
-            , style "width" <| px viewSizes.width
+            , style "width" <| px viewSizes.tableWidth
             ]
             [ div
                 [ style "background-color" "lightgray"
                 , style "margin" "0"
-                , style "width" <| px viewSizes.width
+                , style "width" <| px viewSizes.tableWidth
                 ]
                 [ div
-                    [ style "width" <| px (viewSizes.width - 20)
+                    [ style "width" <| px (viewSizes.tableWidth - 20)
                     , style "padding" "10px"
                     , id "buttonBar"
                     ]
@@ -489,7 +500,6 @@ viewBody model =
 
 viewLeftColumn : Model -> ViewSizes -> Html Msg
 viewLeftColumn model viewSizes =
-    -- TODO compute height to make content fill window
     div []
         [ div [ id "dropHere" ]
             [ text "Drop picture here" ]
@@ -523,7 +533,8 @@ viewRightColumn model viewSizes =
     div []
         [ text "Drag this off"
         , div
-            [ style "width" <| px (viewSizes.leftColumnWidth - (2 * viewSizes.borderWidth))
+            [ style "width" <|
+                px (viewSizes.leftColumnWidth - (2 * viewSizes.borderWidth))
             , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "blue"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
