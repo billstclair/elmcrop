@@ -1,4 +1,4 @@
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 --
 -- Main.elm
 -- ElmCrop - Clone of EasyCrop, in Elm, on the web.
@@ -115,8 +115,8 @@ type alias DelayedCmd =
     }
 
 
-addDelay : Model -> Int -> Cmd Msg -> Model
-addDelay model delay cmd =
+addDelay : Int -> Cmd Msg -> Model -> Model
+addDelay delay cmd model =
     { model
         | delays =
             { time = model.now + delay
@@ -139,7 +139,7 @@ delayedCmds time cmds =
                         ( cmdsTail2, delayedCmdsTail ) =
                             loop nowCmds tail
                     in
-                    if time <= delayedCmd.time then
+                    if time >= delayedCmd.time then
                         ( delayedCmd.cmd :: cmdsTail2, delayedCmdsTail )
 
                     else
@@ -160,11 +160,13 @@ type alias Model =
     , visibility : Visibility
     , captureOnHide : Maybe String
 
+    -- Persisted separately from Model
+    , capturedUrl : Maybe String
+
     -- Persistent below here
     , windowSize : Maybe WindowSize
     , divViewports : Dict String Viewport
     , imgSizes : Dict String ImgSize
-    , capturedUrl : Maybe String
     }
 
 
@@ -179,9 +181,9 @@ type Msg
     | ReceiveImgSize Value
     | InitializeModel
     | ChangeVisibility Visibility
-    | GetViewport Viewport
+    | GotViewport Viewport
     | OnResize Int Int
-    | GetViewportOf String (Result Dom.Error Viewport)
+    | GotViewportOf String (Result Dom.Error Viewport)
     | Play String
     | CloseImage
     | CaptureScreen String
@@ -208,10 +210,10 @@ init flags url key =
     -- Persistent below here
     , capturedUrl = defaultCapturedUrl
     }
+        |> addDelay minimumDelay
+            (Task.perform GotViewport Dom.getViewport)
         |> withCmds
             [ Task.perform RecordTime Time.now
-            , LocalStorage.setPrefix "elmcrop"
-            , Task.perform GetViewport Dom.getViewport
             ]
 
 
@@ -701,7 +703,8 @@ updateInternal msg model =
                     Time.posixToMillis posix
 
                 ( cmds, delays ) =
-                    delayedCmds now model.delays
+                    Debugging.log "delayedCmds" <|
+                        delayedCmds now model.delays
             in
             { model
                 | now = now
@@ -758,20 +761,25 @@ updateInternal msg model =
                         Cmd.none
                     ]
 
-        GetViewport viewport ->
+        GotViewport viewport ->
             let
+                vp =
+                    Debugging.log "GotViewport" viewport
+
                 { width, height } =
-                    viewport.scene
+                    viewport.viewport
             in
             gotWindowSize model (round width) (round height)
+                |> withCmd (LocalStorage.setPrefix "elmcrop")
 
         OnResize w h ->
             gotWindowSize model w h
+                |> withNoCmd
 
-        GetViewportOf id result ->
+        GotViewportOf id result ->
             let
                 r =
-                    Debugging.log ("GetViewportOf " ++ id) result
+                    Debugging.log ("GotViewportOf \"" ++ id ++ "\"") result
             in
             case result of
                 Err err ->
@@ -788,9 +796,18 @@ updateInternal msg model =
             model |> withCmd (playFile filename)
 
         CloseImage ->
+            let
+                cmd =
+                    case defaultCapturedUrl of
+                        Nothing ->
+                            Cmd.none
+
+                        Just url ->
+                            saveCapturedUrl url
+            in
             { model | capturedUrl = defaultCapturedUrl }
                 |> addImgSize "leftImg"
-                |> withNoCmd
+                |> withCmd cmd
 
         CaptureScreen displaySurface ->
             let
@@ -829,31 +846,30 @@ updateInternal msg model =
 
 addImgSize : String -> Model -> Model
 addImgSize id model =
-    addDelay model minimumDelay (imgSizeIn id)
+    addDelay minimumDelay (imgSizeIn id) model
 
 
-gotWindowSize : Model -> Int -> Int -> ( Model, Cmd Msg )
+gotWindowSize : Model -> Int -> Int -> Model
 gotWindowSize model w h =
     let
         wwhh =
             Debugging.log "gotWindowSize" ( w, h )
-
-        cmd =
-            Cmd.batch
-                [ getViewportOfCmd "top"
-                , getViewportOfCmd "bottom"
-                , getViewportOfCmd "dropHere"
-                ]
     in
     { model
         | windowSize = Just wwhh
     }
-        |> withCmd cmd
+        |> addDelay minimumDelay
+            (Cmd.batch
+                [ gotViewportOfCmd "top"
+                , gotViewportOfCmd "bottom"
+                , gotViewportOfCmd "dropHere"
+                ]
+            )
 
 
-getViewportOfCmd : String -> Cmd Msg
-getViewportOfCmd name =
-    Task.attempt (GetViewportOf name) <| Dom.getViewportOf name
+gotViewportOfCmd : String -> Cmd Msg
+gotViewportOfCmd name =
+    Task.attempt (GotViewportOf name) <| Dom.getViewportOf name
 
 
 captureScreenArgs : String -> String -> Value
@@ -881,10 +897,13 @@ receiveLocalStorage model value =
         Ok command ->
             case command.getOrPut of
                 SetPrefix ->
-                    model |> withCmd (LocalStorage.get "model")
+                    model |> withCmd (LocalStorage.get "capturedUrl")
 
                 Get ->
-                    if command.key == "model" then
+                    if command.key == "capturedUrl" then
+                        receiveCapturedUrl command.value model
+
+                    else if command.key == "model" then
                         receiveModel command.value model
 
                     else
@@ -894,8 +913,38 @@ receiveLocalStorage model value =
                     model |> withNoCmd
 
 
+receiveCapturedUrl : Value -> Model -> ( Model, Cmd Msg )
+receiveCapturedUrl value model =
+    let
+        withGetModelCmd =
+            withCmd <| LocalStorage.get "model"
+
+        json =
+            Debugging.log "receiveCapturedUrl" <| "too big to show."
+    in
+    if value == JE.null then
+        model |> withGetModelCmd
+
+    else
+        case JD.decodeValue JD.string value of
+            Err err ->
+                let
+                    err2 =
+                        Debugging.log "ReceiveCapturedUrl error" err
+                in
+                model |> withGetModelCmd
+
+            Ok url ->
+                { model | capturedUrl = Just url }
+                    |> withGetModelCmd
+
+
 receiveModel : Value -> Model -> ( Model, Cmd Msg )
 receiveModel value model =
+    let
+        json =
+            Debugging.log "receiveModel" <| JE.encode 0 value
+    in
     if value == JE.null then
         model |> withNoCmd
 
@@ -947,7 +996,12 @@ receiveCaptureScreen model value =
             else
                 { model | capturedUrl = Just string }
                     |> addImgSize "leftImg"
-                    |> withNoCmd
+                    |> withCmd (saveCapturedUrl string)
+
+
+saveCapturedUrl : String -> Cmd msg
+saveCapturedUrl capturedUrl =
+    LocalStorage.put "capturedUrl" <| JE.string capturedUrl
 
 
 type alias ImgSize =
@@ -997,7 +1051,6 @@ type alias SavedModel =
     { windowSize : Maybe WindowSize
     , divViewports : Dict String Viewport
     , imgSizes : Dict String ImgSize
-    , capturedUrl : Maybe String
     }
 
 
@@ -1006,7 +1059,6 @@ modelToSavedModel model =
     { windowSize = model.windowSize
     , divViewports = model.divViewports
     , imgSizes = model.imgSizes
-    , capturedUrl = model.capturedUrl
     }
 
 
@@ -1016,7 +1068,6 @@ savedModelToModel savedModel model =
         | windowSize = savedModel.windowSize
         , divViewports = savedModel.divViewports
         , imgSizes = savedModel.imgSizes
-        , capturedUrl = savedModel.capturedUrl
     }
 
 
@@ -1055,7 +1106,6 @@ encodeSavedModel savedModel =
         [ ( "windowSize", encodeMaybe windowSizeEncoder savedModel.windowSize )
         , ( "divViewports", JE.dict identity encodeViewport savedModel.divViewports )
         , ( "imgSizes", JE.dict identity encodeImgSize savedModel.imgSizes )
-        , ( "capturedUrl", encodeMaybe JE.string savedModel.capturedUrl )
         ]
 
 
@@ -1065,7 +1115,6 @@ savedModelDecoder =
         |> optional "windowSize" (JD.nullable windowSizeDecoder) Nothing
         |> optional "divViewports" (JD.dict viewportDecoder) Dict.empty
         |> optional "imgSizes" (JD.dict imgSizeDecoder) Dict.empty
-        |> required "capturedUrl" (JD.nullable JD.string)
 
 
 decodeSavedModel : Value -> Result JD.Error SavedModel
