@@ -242,7 +242,10 @@ type alias ViewSizes =
     , height : Int
     , topHeight : Int
     , dropHereHeight : Int --"Drop picture here", "Drag this off"
+    , borderWidth : Int
     , tableHeight : Int
+    , tableWidth : Int
+    , tableRightMargin : Int
     , leftColumnWidth : Int
     , centerColumnWidth : Int
     , rightColumnWidth : Int
@@ -301,7 +304,8 @@ computeViewSizes model =
                     size
 
                 Nothing ->
-                    ( 1024, 768 )
+                    -- Don't know if this will ever matter
+                    ( 400, 400 )
 
         topHeight =
             round topViewport.viewport.height
@@ -315,9 +319,23 @@ computeViewSizes model =
         centerColumnWidth =
             10
 
+        tableRightMargin =
+            10
+
+        borderWidth =
+            1
+
+        tableWidth =
+            width - tableRightMargin
+
         -- TODO: drag center column to resize table
         leftColumnWidth =
-            (width - centerColumnWidth) // 2
+            (tableWidth
+                - centerColumnWidth
+                - tableRightMargin
+                - (4 * borderWidth)
+            )
+                // 2
 
         rightColumnWidth =
             leftColumnWidth
@@ -327,11 +345,19 @@ computeViewSizes model =
     , topHeight = topHeight
     , dropHereHeight = dropHereHeight
     , tableHeight = height - topHeight - bottomHeight - dropHereHeight
+    , tableWidth = tableWidth
+    , borderWidth = borderWidth
+    , tableRightMargin = tableRightMargin
     , leftColumnWidth = leftColumnWidth
     , centerColumnWidth = centerColumnWidth
     , rightColumnWidth = rightColumnWidth
     , bottomHeight = bottomHeight
     }
+
+
+px : Int -> String
+px x =
+    String.fromInt x ++ "px"
 
 
 view : Model -> Document Msg
@@ -344,32 +370,25 @@ view model =
 viewBody : Model -> List (Html Msg)
 viewBody model =
     let
-        ( windowWidth, windowHeight ) =
-            case model.windowSize of
-                Just size ->
-                    size
-
-                Nothing ->
-                    -- Temporary, should come from restored model
-                    ( 400, 400 )
-
-        ( wws, whs ) =
-            ( String.fromInt windowWidth ++ "px"
-            , String.fromInt windowHeight ++ "px"
-            )
+        viewSizes =
+            computeViewSizes model
     in
     [ div
         [ style "background-color" "#e8e8e8"
-        , style "width" wws
-        , style "height" whs
+        , style "width" <| px viewSizes.width
+        , style "height" <| px viewSizes.height
         ]
-        [ div [ id "top" ]
+        [ div
+            [ id "top"
+            , style "width" <| px viewSizes.width
+            ]
             [ div
                 [ style "background-color" "lightgray"
                 , style "margin" "0"
+                , style "width" <| px viewSizes.width
                 ]
                 [ div
-                    [ style "width" "100%"
+                    [ style "width" <| px (viewSizes.width - 20)
                     , style "padding" "10px"
                     , id "buttonBar"
                     ]
@@ -378,27 +397,28 @@ viewBody model =
             , br
             ]
         , table
-            [ style "width" "100%"
-            , style "height" "500px"
-            , style "margin-right" "10px"
+            [ style "table-layout" "fixed"
+            , style "width" <| px viewSizes.tableWidth
+            , style "height" <| px viewSizes.tableHeight
+            , style "margin-right" <| px viewSizes.tableRightMargin
             ]
             -- TODO
-            [ tr [ style "width" "100%" ]
+            [ tr [ style "width" <| px viewSizes.tableWidth ]
                 [ td
-                    [ style "width" "49%"
-                    , style "height" "490px"
+                    [ style "width" <| px viewSizes.leftColumnWidth
+                    , style "height" <| px viewSizes.tableHeight
                     ]
-                    [ viewLeftColumn model ]
+                    [ viewLeftColumn model viewSizes ]
                 , td
-                    [ style "width" "2%"
-                    , style "height" "100%"
+                    [ style "width" <| px viewSizes.centerColumnWidth
+                    , style "height" <| px viewSizes.tableHeight
                     ]
                     [ text "" ]
                 , td
-                    [ style "width" "49%"
-                    , style "height" "100%"
+                    [ style "width" <| px viewSizes.rightColumnWidth
+                    , style "height" <| px viewSizes.tableHeight
                     ]
-                    [ viewRightColumn model ]
+                    [ viewRightColumn model viewSizes ]
                 ]
             ]
         , div [ id "bottom" ]
@@ -465,16 +485,16 @@ viewBody model =
     ]
 
 
-viewLeftColumn : Model -> Html Msg
-viewLeftColumn model =
+viewLeftColumn : Model -> ViewSizes -> Html Msg
+viewLeftColumn model viewSizes =
     -- TODO compute height to make content fill window
     div []
         [ div [ id "dropHere" ]
             [ text "Drop picture here" ]
         , div
-            [ style "height" "490px"
+            [ style "height" <| px viewSizes.tableHeight
             , style "background-color" "white"
-            , style "border" "1px, solid"
+            , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
             [ case model.capturedUrl of
                 Nothing ->
@@ -494,14 +514,14 @@ viewLeftColumn model =
         ]
 
 
-viewRightColumn : Model -> Html Msg
-viewRightColumn model =
+viewRightColumn : Model -> ViewSizes -> Html Msg
+viewRightColumn model viewSizes =
     div []
         [ text "Drag this off"
         , div
-            [ style "height" "490px"
+            [ style "height" <| px viewSizes.tableHeight
             , style "background-color" "blue"
-            , style "border" "1px, solid"
+            , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
             []
         ]
@@ -810,7 +830,6 @@ gotWindowSize model w h =
     in
     { model
         | windowSize = Just wwhh
-        , divViewports = Dict.empty
     }
         |> withCmd cmd
 
