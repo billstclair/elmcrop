@@ -333,7 +333,7 @@ computeViewSizes model =
             (tableWidth
                 - centerColumnWidth
                 - tableRightMargin
-                - (4 * borderWidth)
+                - (2 * borderWidth)
             )
                 // 2
 
@@ -402,8 +402,10 @@ viewBody model =
             , style "height" <| px viewSizes.tableHeight
             , style "margin-right" <| px viewSizes.tableRightMargin
             ]
-            -- TODO
-            [ tr [ style "width" <| px viewSizes.tableWidth ]
+            [ tr
+                [ style "width" <| px viewSizes.tableWidth
+                , style "height" <| px viewSizes.tableHeight
+                ]
                 [ td
                     [ style "width" <| px viewSizes.leftColumnWidth
                     , style "height" <| px viewSizes.tableHeight
@@ -492,7 +494,9 @@ viewLeftColumn model viewSizes =
         [ div [ id "dropHere" ]
             [ text "Drop picture here" ]
         , div
-            [ style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
+            [ style "width" <|
+                px (viewSizes.leftColumnWidth - (2 * viewSizes.borderWidth))
+            , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "white"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
@@ -519,7 +523,8 @@ viewRightColumn model viewSizes =
     div []
         [ text "Drag this off"
         , div
-            [ style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
+            [ style "width" <| px (viewSizes.leftColumnWidth - (2 * viewSizes.borderWidth))
+            , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "blue"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
