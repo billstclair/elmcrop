@@ -9,7 +9,8 @@
 --
 -- TODO:
 --
--- Sometimes the capturedUrl fails to convert. Don't know why yet.
+-- Sometimes the capturedUrl fails to convert (from LocalStorage).
+--   Don't know why yet.
 --
 -------------------------------------------------------------------------------
 
