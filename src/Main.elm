@@ -26,6 +26,8 @@ import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Debugging
 import Dict exposing (Dict)
+import DropZone
+import File exposing (File)
 import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
@@ -159,6 +161,7 @@ type alias Model =
     , delays : List DelayedCmd
     , visibility : Visibility
     , captureOnHide : Maybe String
+    , dropZone : DropZone.Model
 
     -- Persisted separately from Model
     , capturedUrl : Maybe String
@@ -188,6 +191,8 @@ type Msg
     | CloseImage
     | CaptureScreen String
     | TimedCaptureScreen
+    | PostDrop (DropZone.DropZoneMessage (List File))
+    | SetCapturedUrl String
 
 
 defaultCapturedUrl : Maybe String
@@ -206,6 +211,7 @@ init flags url key =
     , windowSize = Nothing
     , divViewports = Dict.empty
     , imgSizes = Dict.empty
+    , dropZone = DropZone.init
 
     -- Persistent below here
     , capturedUrl = defaultCapturedUrl
@@ -388,10 +394,16 @@ viewBody model =
             computeViewSizes model
     in
     [ div
-        [ style "background-color" "#e8e8e8"
-        , style "width" <| px viewSizes.width
-        , style "height" <| px viewSizes.height
-        ]
+        (List.concat
+            [ [ style "background-color" "#e8e8e8"
+              , style "width" <| px viewSizes.width
+              , style "height" <| px viewSizes.height
+              ]
+
+            -- TODO: Fix type mismatch
+            --, DropZone.dropZoneEventHandlers decodeFiles
+            ]
+        )
         [ div
             [ id "top"
             , style "width" <| px viewSizes.tableWidth
@@ -828,6 +840,36 @@ updateInternal msg model =
             -- TODO
             model |> withNoCmd
 
+        PostDrop dzmsg ->
+            let
+                dropZone =
+                    model.dropZone
+
+                mdl =
+                    { model | dropZone = DropZone.update dzmsg dropZone }
+            in
+            case dzmsg of
+                DropZone.Drop files ->
+                    let
+                        cmd =
+                            case files of
+                                file :: _ ->
+                                    Task.perform SetCapturedUrl <| File.toUrl file
+
+                                _ ->
+                                    -- Ignore if no files. Shouldn't happen.
+                                    Cmd.none
+                    in
+                    mdl |> withCmd cmd
+
+                _ ->
+                    mdl |> withNoCmd
+
+        SetCapturedUrl url ->
+            { model | capturedUrl = Just url }
+                |> addImgSize "leftImg"
+                |> withCmd (saveCapturedUrl url)
+
         OnUrlChange url ->
             model |> withNoCmd
 
@@ -841,6 +883,11 @@ updateInternal msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+decodeFiles : JD.Decoder (List File)
+decodeFiles =
+    JD.field "dataTransfer" (JD.field "files" (JD.list File.decoder))
 
 
 addImgSize : String -> Model -> Model
@@ -993,9 +1040,7 @@ receiveCaptureScreen model value =
                     model |> withNoCmd
 
             else
-                { model | capturedUrl = Just string }
-                    |> addImgSize "leftImg"
-                    |> withCmd (saveCapturedUrl string)
+                model |> withCmd (Task.perform SetCapturedUrl <| Task.succeed string)
 
 
 saveCapturedUrl : String -> Cmd msg
