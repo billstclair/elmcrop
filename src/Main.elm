@@ -193,6 +193,7 @@ type Msg
     | TimedCaptureScreen
     | PostDrop (DropZone.DropZoneMessage (List File))
     | SetCapturedUrl String
+    | Drop (List File)
 
 
 defaultCapturedUrl : Maybe String
@@ -399,7 +400,7 @@ dzehToAttribute dzeh =
 dzehAttributes : List (Html.Attribute Msg)
 dzehAttributes =
     List.map dzehToAttribute <|
-        DropZone.dropZoneEventHandlers decodeFiles
+        DropZone.dropZoneEventHandlers filesDecoder
 
 
 viewBody : Model -> List (Html Msg)
@@ -413,6 +414,7 @@ viewBody model =
             [ [ style "background-color" "#e8e8e8"
               , style "width" <| px viewSizes.width
               , style "height" <| px viewSizes.height
+              , Html.Events.custom "drop" dropDecoder
               ]
 
             -- TODO: Fix type mismatch
@@ -885,6 +887,13 @@ updateInternal msg model =
                 |> addImgSize "leftImg"
                 |> withCmd (saveCapturedUrl url)
 
+        Drop files ->
+            let
+                ignore =
+                    Debugging.log "Drop" files
+            in
+            model |> withNoCmd
+
         OnUrlChange url ->
             model |> withNoCmd
 
@@ -900,8 +909,28 @@ updateInternal msg model =
             model |> withCmd Navigation.reloadAndSkipCache
 
 
-decodeFiles : JD.Decoder (List File)
-decodeFiles =
+dropDecoder : Decoder { message : Msg, preventDefault : Bool, stopPropagation : Bool }
+dropDecoder =
+    JD.value
+        |> JD.andThen
+            (\value ->
+                let
+                    v2 =
+                        Debugging.log "dropDecoder value" value
+                in
+                JD.map
+                    (\files ->
+                        { message = Drop files
+                        , preventDefault = True
+                        , stopPropagation = True
+                        }
+                    )
+                    filesDecoder
+            )
+
+
+filesDecoder : Decoder (List File)
+filesDecoder =
     JD.field "dataTransfer" (JD.field "files" (JD.list File.decoder))
 
 
