@@ -29,7 +29,7 @@ import Dict exposing (Dict)
 import DropZone
 import File exposing (File)
 import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
-import Html.Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
+import Html.Attributes as Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
 import Html.Events exposing (onClick, onFocus, onInput)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
@@ -387,6 +387,21 @@ view model =
     }
 
 
+dzehToAttribute : Html.Attribute (DropZone.DropZoneMessage (List File)) -> Html.Attribute Msg
+dzehToAttribute dzeh =
+    let
+        dzeh2 =
+            Debugging.log "dzeh" <| dzeh
+    in
+    style "" ""
+
+
+dzehAttributes : List (Html.Attribute Msg)
+dzehAttributes =
+    List.map dzehToAttribute <|
+        DropZone.dropZoneEventHandlers decodeFiles
+
+
 viewBody : Model -> List (Html Msg)
 viewBody model =
     let
@@ -401,7 +416,7 @@ viewBody model =
               ]
 
             -- TODO: Fix type mismatch
-            --, DropZone.dropZoneEventHandlers decodeFiles
+            , dzehAttributes
             ]
         )
         [ div
@@ -561,7 +576,7 @@ viewRightColumn model viewSizes =
 buttonBarButton : String -> Bool -> String -> Msg -> Html Msg
 buttonBarButton imgName enabled title msg =
     Html.span
-        [ Html.Attributes.title title
+        [ Attributes.title title
         , style "width" "100%"
         , onClick msg
         , style "cursor" <|
