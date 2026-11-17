@@ -14,8 +14,7 @@
             "elm/html": "1.0.1",
             "elm/json": "1.1.4",
             "elm/time": "1.0.0",
-            "elm/url": "1.0.0",
-            "proda-ai/elm-dropzone": "1.0.1"
+            "elm/url": "1.0.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

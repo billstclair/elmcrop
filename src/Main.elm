@@ -26,7 +26,6 @@ import Browser.Navigation as Navigation exposing (Key)
 import Cmd.Extra exposing (addCmd, withCmd, withCmds, withNoCmd)
 import Debugging
 import Dict exposing (Dict)
-import DropZone
 import File exposing (File)
 import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes as Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
@@ -161,7 +160,6 @@ type alias Model =
     , delays : List DelayedCmd
     , visibility : Visibility
     , captureOnHide : Maybe String
-    , dropZone : DropZone.Model
 
     -- Persisted separately from Model
     , capturedUrl : Maybe String
@@ -191,7 +189,6 @@ type Msg
     | CloseImage
     | CaptureScreen String
     | TimedCaptureScreen
-    | PostDrop (DropZone.DropZoneMessage (List File))
     | SetCapturedUrl String
     | Drop (List File)
 
@@ -212,7 +209,6 @@ init flags url key =
     , windowSize = Nothing
     , divViewports = Dict.empty
     , imgSizes = Dict.empty
-    , dropZone = DropZone.init
 
     -- Persistent below here
     , capturedUrl = defaultCapturedUrl
@@ -388,21 +384,6 @@ view model =
     }
 
 
-dzehToAttribute : Html.Attribute (DropZone.DropZoneMessage (List File)) -> Html.Attribute Msg
-dzehToAttribute dzeh =
-    let
-        dzeh2 =
-            Debugging.log "dzeh" <| dzeh
-    in
-    style "" ""
-
-
-dzehAttributes : List (Html.Attribute Msg)
-dzehAttributes =
-    List.map dzehToAttribute <|
-        DropZone.dropZoneEventHandlers filesDecoder
-
-
 viewBody : Model -> List (Html Msg)
 viewBody model =
     let
@@ -414,11 +395,14 @@ viewBody model =
             [ [ style "background-color" "#e8e8e8"
               , style "width" <| px viewSizes.width
               , style "height" <| px viewSizes.height
+              , Html.Events.custom "dragenter" dragEnterDecoder
+              , Html.Events.custom "dragover" dragEnterDecoder
+              , Html.Events.custom "dragleave" dragEnterDecoder
               , Html.Events.custom "drop" dropDecoder
               ]
 
             -- TODO: Fix type mismatch
-            , dzehAttributes
+            --, dzehAttributes
             ]
         )
         [ div
@@ -857,32 +841,11 @@ updateInternal msg model =
             -- TODO
             model |> withNoCmd
 
-        PostDrop dzmsg ->
-            let
-                dropZone =
-                    model.dropZone
-
-                mdl =
-                    { model | dropZone = DropZone.update dzmsg dropZone }
-            in
-            case dzmsg of
-                DropZone.Drop files ->
-                    let
-                        cmd =
-                            case files of
-                                file :: _ ->
-                                    Task.perform SetCapturedUrl <| File.toUrl file
-
-                                _ ->
-                                    -- Ignore if no files. Shouldn't happen.
-                                    Cmd.none
-                    in
-                    mdl |> withCmd cmd
-
-                _ ->
-                    mdl |> withNoCmd
-
         SetCapturedUrl url ->
+            let
+                urlHead =
+                    Debugging.log "SetCapturedUrl" <| String.left 50 url ++ "..."
+            in
             { model | capturedUrl = Just url }
                 |> addImgSize "leftImg"
                 |> withCmd (saveCapturedUrl url)
@@ -892,7 +855,14 @@ updateInternal msg model =
                 ignore =
                     Debugging.log "Drop" files
             in
-            model |> withNoCmd
+            case List.head files of
+                Nothing ->
+                    model |> withNoCmd
+
+                Just file ->
+                    model
+                        |> withCmd
+                            (Task.perform SetCapturedUrl <| File.toUrl file)
 
         OnUrlChange url ->
             model |> withNoCmd
@@ -909,6 +879,15 @@ updateInternal msg model =
             model |> withCmd Navigation.reloadAndSkipCache
 
 
+dragEnterDecoder : Decoder { message : Msg, preventDefault : Bool, stopPropagation : Bool }
+dragEnterDecoder =
+    JD.succeed
+        { message = Nop
+        , preventDefault = True
+        , stopPropagation = False
+        }
+
+
 dropDecoder : Decoder { message : Msg, preventDefault : Bool, stopPropagation : Bool }
 dropDecoder =
     JD.value
@@ -916,7 +895,7 @@ dropDecoder =
             (\value ->
                 let
                     v2 =
-                        Debugging.log "dropDecoder value" value
+                        Debugging.log "dropDecoder value" <| JE.encode 0 value
                 in
                 JD.map
                     (\files ->
