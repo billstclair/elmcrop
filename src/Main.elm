@@ -844,7 +844,7 @@ updateInternal msg model =
         SetCapturedUrl url ->
             let
                 urlHead =
-                    Debugging.log "SetCapturedUrl" <| String.left 50 url ++ "..."
+                    logLongString "SetCapturedUrl" url
             in
             { model | capturedUrl = Just url }
                 |> addImgSize "leftImg"
@@ -982,6 +982,13 @@ receiveLocalStorage model value =
                     model |> withNoCmd
 
 
+logLongString : String -> String -> String
+logLongString label value =
+    Debugging.log label <|
+        String.left 50 value
+            ++ "..."
+
+
 receiveCapturedUrl : Value -> Model -> ( Model, Cmd Msg )
 receiveCapturedUrl value model =
     let
@@ -989,12 +996,7 @@ receiveCapturedUrl value model =
             withCmd <| LocalStorage.get "model"
 
         json =
-            Debugging.log "receiveCapturedUrl" <|
-                String.left
-                    50
-                <|
-                    JE.encode 0 value
-                        ++ "..."
+            logLongString "receiveCapturedUrl" <| JE.encode 0 value
     in
     if value == JE.null then
         model |> withGetModelCmd
