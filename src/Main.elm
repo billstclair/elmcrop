@@ -989,7 +989,12 @@ receiveCapturedUrl value model =
             withCmd <| LocalStorage.get "model"
 
         json =
-            Debugging.log "receiveCapturedUrl" <| "too big to show."
+            Debugging.log "receiveCapturedUrl" <|
+                String.left
+                    50
+                <|
+                    JE.encode 0 value
+                        ++ "..."
     in
     if value == JE.null then
         model |> withGetModelCmd
