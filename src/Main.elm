@@ -28,8 +28,8 @@ import Debugging
 import Dict exposing (Dict)
 import File exposing (File)
 import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
-import Html.Attributes as Attributes exposing (align, alt, checked, disabled, height, href, id, name, size, src, style, title, type_, value, width)
-import Html.Events exposing (onClick, onFocus, onInput)
+import Html.Attributes as Attributes exposing (align, alt, checked, disabled, draggable, height, href, id, name, size, src, style, title, type_, value, width)
+import Html.Events exposing (onClick, onFocus, onInput, onMouseDown, onMouseEnter, onMouseOver, onMouseUp)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
@@ -538,6 +538,7 @@ viewLeftColumn model viewSizes =
                         , style "object-fit" "cover"
                         , style "width" "100%"
                         , style "height" "100%"
+                        , draggable "false"
                         ]
                         []
             ]
