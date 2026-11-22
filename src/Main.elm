@@ -29,7 +29,8 @@ import Dict exposing (Dict)
 import File exposing (File)
 import Html exposing (Html, a, button, div, fieldset, iframe, img, input, legend, p, span, table, td, text, textarea, th, tr, ul)
 import Html.Attributes as Attributes exposing (align, alt, checked, disabled, draggable, height, href, id, name, size, src, style, title, type_, value, width)
-import Html.Events exposing (onClick, onFocus, onInput, onMouseDown, onMouseEnter, onMouseOver, onMouseUp)
+import Html.Events exposing (onClick, onFocus, onInput)
+import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Pipeline as DP exposing (custom, hardcoded, optional, required)
 import Json.Encode as JE exposing (Value)
@@ -191,6 +192,10 @@ type Msg
     | TimedCaptureScreen
     | SetCapturedUrl String
     | Drop (List File)
+    | MouseDownLeft ( Float, Float )
+    | MouseMoveLeft ( Float, Float )
+    | MouseUpLeft ( Float, Float )
+    | MouseLeaveLeft ( Float, Float )
 
 
 defaultCapturedUrl : Maybe String
@@ -525,6 +530,10 @@ viewLeftColumn model viewSizes =
             , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "white"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
+            , Mouse.onDown (.clientPos >> MouseDownLeft)
+            , Mouse.onMove (.clientPos >> MouseMoveLeft)
+            , Mouse.onUp (.clientPos >> MouseUpLeft)
+            , Mouse.onLeave (.clientPos >> MouseLeaveLeft) --should this use onOut?
             ]
             [ case model.capturedUrl of
                 Nothing ->
@@ -864,6 +873,22 @@ updateInternal msg model =
                     model
                         |> withCmd
                             (Task.perform SetCapturedUrl <| File.toUrl file)
+
+        MouseDownLeft ( x, y ) ->
+            -- TODO
+            model |> withNoCmd
+
+        MouseMoveLeft ( x, y ) ->
+            -- TODO
+            model |> withNoCmd
+
+        MouseUpLeft ( x, y ) ->
+            -- TODO
+            model |> withNoCmd
+
+        MouseLeaveLeft ( x, y ) ->
+            -- TODO
+            model |> withNoCmd
 
         OnUrlChange url ->
             model |> withNoCmd
