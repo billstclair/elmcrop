@@ -534,10 +534,10 @@ viewLeftColumn model viewSizes =
             , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "white"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
-            , Mouse.onDown (.clientPos >> MouseDownLeft)
-            , Mouse.onMove (.clientPos >> MouseMoveLeft)
-            , Mouse.onUp (.clientPos >> MouseUpLeft)
-            , Mouse.onLeave (.clientPos >> MouseLeaveLeft) --should this use onOut?
+            , Mouse.onDown (.offsetPos >> MouseDownLeft)
+            , Mouse.onMove (.offsetPos >> MouseMoveLeft)
+            , Mouse.onUp (.offsetPos >> MouseUpLeft)
+            , Mouse.onLeave (.offsetPos >> MouseLeaveLeft) --should this use onOut?
             ]
             [ case model.capturedUrl of
                 Nothing ->
