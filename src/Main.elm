@@ -161,6 +161,7 @@ type alias Model =
     , delays : List DelayedCmd
     , visibility : Visibility
     , captureOnHide : Maybe String
+    , error : String
 
     -- Persisted separately from Model
     , capturedUrl : Maybe String
@@ -211,6 +212,7 @@ init flags url key =
     , delays = []
     , visibility = Visible
     , captureOnHide = Nothing
+    , error = chars.nbsp
     , windowSize = Nothing
     , divViewports = Dict.empty
     , imgSizes = Dict.empty
@@ -482,7 +484,9 @@ viewBody model =
                     text ""
                 ]
             , div [ id "footer" ]
-                [ p []
+                [ p [ style "color" "red" ]
+                    [ text model.error ]
+                , p []
                     [ a
                         [ href "#"
                         , onClick ReloadFromServer
@@ -876,19 +880,19 @@ updateInternal msg model =
 
         MouseDownLeft ( x, y ) ->
             -- TODO
-            model |> withNoCmd
+            model |> setErrorPos "MouseDownLeft" x y |> withNoCmd
 
         MouseMoveLeft ( x, y ) ->
             -- TODO
-            model |> withNoCmd
+            model |> setErrorPos "MouseMoveLeft" x y |> withNoCmd
 
         MouseUpLeft ( x, y ) ->
             -- TODO
-            model |> withNoCmd
+            model |> setErrorPos "MouseUpLeft" x y |> withNoCmd
 
         MouseLeaveLeft ( x, y ) ->
             -- TODO
-            model |> withNoCmd
+            model |> setErrorPos "MouseLeaveLeft" x y |> withNoCmd
 
         OnUrlChange url ->
             model |> withNoCmd
@@ -903,6 +907,14 @@ updateInternal msg model =
 
         ReloadFromServer ->
             model |> withCmd Navigation.reloadAndSkipCache
+
+
+setErrorPos : String -> Float -> Float -> Model -> Model
+setErrorPos string x y model =
+    { model
+        | error =
+            string ++ " (" ++ String.fromFloat x ++ ", " ++ String.fromFloat y ++ ")"
+    }
 
 
 dragEnterDecoder : Decoder { message : Msg, preventDefault : Bool, stopPropagation : Bool }
