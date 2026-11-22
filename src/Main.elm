@@ -161,6 +161,8 @@ type alias Model =
     , delays : List DelayedCmd
     , visibility : Visibility
     , captureOnHide : Maybe String
+    , mouseDownLeft : Maybe ( Float, Float )
+    , mouseMoveLeft : Maybe ( Float, Float )
     , error : String
 
     -- Persisted separately from Model
@@ -212,6 +214,8 @@ init flags url key =
     , delays = []
     , visibility = Visible
     , captureOnHide = Nothing
+    , mouseDownLeft = Nothing
+    , mouseMoveLeft = Nothing
     , error = chars.nbsp
     , windowSize = Nothing
     , divViewports = Dict.empty
@@ -384,6 +388,11 @@ px x =
     String.fromInt x ++ "px"
 
 
+fpx : Float -> String
+fpx x =
+    String.fromFloat x ++ "px"
+
+
 view : Model -> Document Msg
 view model =
     { title = "ElmCrop"
@@ -534,10 +543,10 @@ viewLeftColumn model viewSizes =
             , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "white"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
-            , Mouse.onDown (.offsetPos >> MouseDownLeft)
-            , Mouse.onMove (.offsetPos >> MouseMoveLeft)
-            , Mouse.onUp (.offsetPos >> MouseUpLeft)
-            , Mouse.onLeave (.offsetPos >> MouseLeaveLeft) --should this use onOut?
+            , Mouse.onDown (.pagePos >> MouseDownLeft)
+            , Mouse.onMove (.pagePos >> MouseMoveLeft)
+            , Mouse.onUp (.pagePos >> MouseUpLeft)
+            , Mouse.onLeave (.pagePos >> MouseLeaveLeft) --should this use onOut?
             ]
             [ case model.capturedUrl of
                 Nothing ->
@@ -554,8 +563,55 @@ viewLeftColumn model viewSizes =
                         , draggable "false"
                         ]
                         []
+            , case model.mouseDownLeft of
+                Nothing ->
+                    text ""
+
+                Just mouseDownLeft ->
+                    case model.mouseMoveLeft of
+                        Nothing ->
+                            text ""
+
+                        Just mouseMoveLeft ->
+                            viewRedRectangle model mouseDownLeft mouseMoveLeft
             ]
         ]
+
+
+viewRedRectangle : Model -> ( Float, Float ) -> ( Float, Float ) -> Html msg
+viewRedRectangle model ( mdlX, mdlY ) ( mmlX, mmlY ) =
+    let
+        left =
+            min mdlX mmlX
+
+        right =
+            max mdlX mmlX
+
+        top =
+            min mdlY mmlY
+
+        bottom =
+            max mdlY mmlY
+
+        ignore =
+            Debugging.log "( (left, top), (right, bottom) )"
+                ( ( left, top ), ( right, bottom ) )
+
+        width =
+            right - left - 4
+
+        height =
+            bottom - top - 4
+    in
+    div
+        [ style "position" "absolute"
+        , style "border" "2px solid red" --1 pixel reds don't scale well
+        , style "top" <| fpx top
+        , style "left" <| fpx left
+        , style "height" <| fpx height
+        , style "width" <| fpx width
+        ]
+        []
 
 
 viewRightColumn : Model -> ViewSizes -> Html Msg
@@ -879,20 +935,38 @@ updateInternal msg model =
                             (Task.perform SetCapturedUrl <| File.toUrl file)
 
         MouseDownLeft ( x, y ) ->
-            -- TODO
-            model |> setErrorPos "MouseDownLeft" x y |> withNoCmd
+            { model | mouseDownLeft = Just ( x, y ) }
+                |> setErrorPos "MouseDownLeft" x y
+                |> withNoCmd
 
         MouseMoveLeft ( x, y ) ->
-            -- TODO
-            model |> setErrorPos "MouseMoveLeft" x y |> withNoCmd
+            { model
+                | mouseMoveLeft =
+                    if model.mouseDownLeft /= Nothing then
+                        Just ( x, y )
+
+                    else
+                        Nothing
+            }
+                |> setErrorPos "MouseMoveLeft" x y
+                |> withNoCmd
 
         MouseUpLeft ( x, y ) ->
-            -- TODO
-            model |> setErrorPos "MouseUpLeft" x y |> withNoCmd
+            -- TODO: move selected rectangle to right side
+            { model
+                | mouseDownLeft = Nothing
+                , mouseMoveLeft = Nothing
+            }
+                |> setErrorPos "MouseUpLeft" x y
+                |> withNoCmd
 
         MouseLeaveLeft ( x, y ) ->
-            -- TODO
-            model |> setErrorPos "MouseLeaveLeft" x y |> withNoCmd
+            { model
+                | mouseDownLeft = Nothing
+                , mouseMoveLeft = Nothing
+            }
+                |> setErrorPos "MouseLeaveLeft" x y
+                |> withNoCmd
 
         OnUrlChange url ->
             model |> withNoCmd
