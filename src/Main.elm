@@ -267,6 +267,7 @@ type alias ViewSizes =
     , height : Int
     , topHeight : Int
     , dropHereHeight : Int --"Drop picture here", "Drag this off"
+    , imgSizeHeight : Int
     , borderWidth : Int
     , tableHeight : Int
     , tableWidth : Int
@@ -300,7 +301,7 @@ computeViewSizes model =
             model.divViewports
 
         topViewport =
-            case Dict.get "top" divViewports of
+            case Dict.get imgNames.top divViewports of
                 Just top ->
                     top
 
@@ -308,7 +309,7 @@ computeViewSizes model =
                     zeroViewport
 
         bottomViewport =
-            case Dict.get "bottom" divViewports of
+            case Dict.get imgNames.bottom divViewports of
                 Just bottom ->
                     bottom
 
@@ -316,9 +317,17 @@ computeViewSizes model =
                     zeroViewport
 
         dropHereViewport =
-            case Dict.get "dropHere" divViewports of
+            case Dict.get imgNames.dropHere divViewports of
                 Just dropHere ->
                     dropHere
+
+                Nothing ->
+                    zeroViewport
+
+        imgSizeViewport =
+            case Dict.get imgNames.imgSize divViewports of
+                Just imgSize ->
+                    imgSize
 
                 Nothing ->
                     zeroViewport
@@ -340,6 +349,9 @@ computeViewSizes model =
 
         dropHereHeight =
             round dropHereViewport.viewport.height
+
+        imgSizeHeight =
+            round imgSizeViewport.viewport.height
 
         centerColumnWidth =
             10
@@ -370,9 +382,10 @@ computeViewSizes model =
     , height = height
     , topHeight = topHeight
     , dropHereHeight = dropHereHeight
+    , imgSizeHeight = imgSizeHeight
 
     -- the 10 is from I know not where
-    , tableHeight = height - topHeight - bottomHeight - dropHereHeight - 10
+    , tableHeight = height - topHeight - bottomHeight - dropHereHeight - imgSizeHeight - 10
     , tableWidth = tableWidth
     , borderWidth = borderWidth
     , tableRightMargin = tableRightMargin
@@ -422,7 +435,7 @@ viewBody model =
             ]
         )
         [ div
-            [ id "top"
+            [ id imgNames.top
             , style "width" <| px viewSizes.tableWidth
             ]
             [ div
@@ -466,7 +479,7 @@ viewBody model =
                     [ viewRightColumn model viewSizes ]
                 ]
             ]
-        , div [ id "bottom" ]
+        , div [ id imgNames.bottom ]
             [ div [ id "hidemsg" ]
                 [ br
                 , case model.captureOnHide of
@@ -493,9 +506,9 @@ viewBody model =
                     text ""
                 ]
             , div [ id "footer" ]
-                [ p [ style "color" "red" ]
-                    [ text model.error ]
-                , p []
+                [ --p [ style "color" "red" ]
+                  --  [ text model.error ]
+                  p []
                     [ a
                         [ href "#"
                         , onClick ReloadFromServer
@@ -532,15 +545,25 @@ viewBody model =
     ]
 
 
+imgNames =
+    { leftImg = "leftImg"
+    , imgSize = "imgSize"
+    , dropHere = "dropHere"
+    , top = "top"
+    , bottom = "bottom"
+    }
+
+
 viewLeftColumn : Model -> ViewSizes -> Html Msg
 viewLeftColumn model viewSizes =
     div []
-        [ div [ id "dropHere" ]
+        [ div [ id imgNames.dropHere ]
             [ text "Drop picture here" ]
         , div
             [ style "width" <|
                 px (viewSizes.leftColumnWidth - (2 * viewSizes.borderWidth))
-            , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
+            , style "height" <|
+                px (viewSizes.tableHeight - viewSizes.dropHereHeight)
             , style "background-color" "white"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
             , Mouse.onDown (.pagePos >> MouseDownLeft)
@@ -554,15 +577,31 @@ viewLeftColumn model viewSizes =
 
                 Just capturedUrl ->
                     -- TODO Drag image that is too big to fit
-                    img
-                        [ src capturedUrl
-                        , id "leftImg"
-                        , style "object-fit" "cover"
-                        , style "width" "100%"
-                        , style "height" "100%"
-                        , draggable "false"
+                    span []
+                        [ img
+                            [ src capturedUrl
+                            , id imgNames.leftImg
+                            , style "object-fit" "cover"
+                            , style "width" "100%"
+                            , style "height" "100%"
+                            , draggable "false"
+                            ]
+                            []
+                        , case Dict.get imgNames.leftImg model.imgSizes of
+                            Nothing ->
+                                text chars.nbsp
+
+                            Just { naturalWidth, naturalHeight } ->
+                                div
+                                    [ style "float" "right"
+                                    , id imgNames.imgSize
+                                    ]
+                                    [ text <|
+                                        String.fromInt naturalWidth
+                                            ++ ", "
+                                            ++ String.fromInt naturalHeight
+                                    ]
                         ]
-                        []
             , case model.mouseDownLeft of
                 Nothing ->
                     text ""
@@ -621,11 +660,18 @@ viewRightColumn model viewSizes =
         , div
             [ style "width" <|
                 px (viewSizes.leftColumnWidth - (2 * viewSizes.borderWidth))
-            , style "height" <| px (viewSizes.tableHeight - viewSizes.dropHereHeight)
+            , style "height" <|
+                px
+                    (viewSizes.tableHeight
+                        - viewSizes.dropHereHeight
+                    )
             , style "background-color" "blue"
             , style "border" <| px viewSizes.borderWidth ++ ", solid"
             ]
             []
+        , div [ style "float" "right" ]
+            -- TODO: size the right image
+            [ text chars.nbsp ]
         ]
 
 
@@ -793,7 +839,7 @@ updateInternal msg model =
                 , delays = delays
             }
                 |> (if model.now == 0 then
-                        addImgSize "leftImg"
+                        addImgSizes [ imgNames.leftImg, imgNames.imgSize ]
 
                     else
                         identity
@@ -888,7 +934,7 @@ updateInternal msg model =
                             saveCapturedUrl url
             in
             { model | capturedUrl = defaultCapturedUrl }
-                |> addImgSize "leftImg"
+                |> addImgSize imgNames.leftImg
                 |> withCmd cmd
 
         CaptureScreen displaySurface ->
@@ -917,7 +963,7 @@ updateInternal msg model =
                     logLongString "SetCapturedUrl" url
             in
             { model | capturedUrl = Just url }
-                |> addImgSize "leftImg"
+                |> addImgSize imgNames.leftImg
                 |> withCmd (saveCapturedUrl url)
 
         Drop files ->
@@ -1025,6 +1071,11 @@ filesDecoder =
     JD.field "dataTransfer" (JD.field "files" (JD.list File.decoder))
 
 
+addImgSizes : List String -> Model -> Model
+addImgSizes ids model =
+    addDelay minimumDelay (Cmd.batch <| List.map imgSizeIn ids) model
+
+
 addImgSize : String -> Model -> Model
 addImgSize id model =
     addDelay minimumDelay (imgSizeIn id) model
@@ -1041,9 +1092,10 @@ gotWindowSize model w h =
     }
         |> addDelay minimumDelay
             (Cmd.batch
-                [ gotViewportOfCmd "top"
-                , gotViewportOfCmd "bottom"
-                , gotViewportOfCmd "dropHere"
+                [ gotViewportOfCmd imgNames.top
+                , gotViewportOfCmd imgNames.bottom
+                , gotViewportOfCmd imgNames.dropHere
+                , gotViewportOfCmd imgNames.imgSize
                 ]
             )
 
