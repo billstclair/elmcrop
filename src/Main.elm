@@ -301,7 +301,7 @@ computeViewSizes model =
             model.divViewports
 
         topViewport =
-            case Dict.get imgNames.top divViewports of
+            case Dict.get strings.top divViewports of
                 Just top ->
                     top
 
@@ -309,7 +309,7 @@ computeViewSizes model =
                     zeroViewport
 
         bottomViewport =
-            case Dict.get imgNames.bottom divViewports of
+            case Dict.get strings.bottom divViewports of
                 Just bottom ->
                     bottom
 
@@ -317,7 +317,7 @@ computeViewSizes model =
                     zeroViewport
 
         dropHereViewport =
-            case Dict.get imgNames.dropHere divViewports of
+            case Dict.get strings.dropHere divViewports of
                 Just dropHere ->
                     dropHere
 
@@ -325,7 +325,7 @@ computeViewSizes model =
                     zeroViewport
 
         imgSizeViewport =
-            case Dict.get imgNames.imgSize divViewports of
+            case Dict.get strings.imgSize divViewports of
                 Just imgSize ->
                     imgSize
 
@@ -435,7 +435,7 @@ viewBody model =
             ]
         )
         [ div
-            [ id imgNames.top
+            [ id strings.top
             , style "width" <| px viewSizes.tableWidth
             ]
             [ div
@@ -479,7 +479,7 @@ viewBody model =
                     [ viewRightColumn model viewSizes ]
                 ]
             ]
-        , div [ id imgNames.bottom ]
+        , div [ id strings.bottom ]
             [ div [ id "hidemsg" ]
                 [ br
                 , case model.captureOnHide of
@@ -545,7 +545,7 @@ viewBody model =
     ]
 
 
-imgNames =
+strings =
     { leftImg = "leftImg"
     , imgSize = "imgSize"
     , dropHere = "dropHere"
@@ -557,7 +557,7 @@ imgNames =
 viewLeftColumn : Model -> ViewSizes -> Html Msg
 viewLeftColumn model viewSizes =
     div []
-        [ div [ id imgNames.dropHere ]
+        [ div [ id strings.dropHere ]
             [ text "Drop picture here" ]
         , div
             [ style "width" <|
@@ -580,21 +580,21 @@ viewLeftColumn model viewSizes =
                     span []
                         [ img
                             [ src capturedUrl
-                            , id imgNames.leftImg
+                            , id strings.leftImg
                             , style "object-fit" "cover"
                             , style "width" "100%"
                             , style "height" "100%"
                             , draggable "false"
                             ]
                             []
-                        , case Dict.get imgNames.leftImg model.imgSizes of
+                        , case Dict.get strings.leftImg model.imgSizes of
                             Nothing ->
                                 text chars.nbsp
 
                             Just { naturalWidth, naturalHeight } ->
                                 div
                                     [ style "float" "right"
-                                    , id imgNames.imgSize
+                                    , id strings.imgSize
                                     ]
                                     [ text <|
                                         String.fromInt naturalWidth
@@ -839,7 +839,7 @@ updateInternal msg model =
                 , delays = delays
             }
                 |> (if model.now == 0 then
-                        addImgSizes [ imgNames.leftImg, imgNames.imgSize ]
+                        addImgSizes [ strings.leftImg, strings.imgSize ]
 
                     else
                         identity
@@ -934,7 +934,7 @@ updateInternal msg model =
                             saveCapturedUrl url
             in
             { model | capturedUrl = defaultCapturedUrl }
-                |> addImgSize imgNames.leftImg
+                |> addImgSize strings.leftImg
                 |> withCmd cmd
 
         CaptureScreen displaySurface ->
@@ -963,7 +963,7 @@ updateInternal msg model =
                     logLongString "SetCapturedUrl" url
             in
             { model | capturedUrl = Just url }
-                |> addImgSize imgNames.leftImg
+                |> addImgSize strings.leftImg
                 |> withCmd (saveCapturedUrl url)
 
         Drop files ->
@@ -1092,10 +1092,10 @@ gotWindowSize model w h =
     }
         |> addDelay minimumDelay
             (Cmd.batch
-                [ gotViewportOfCmd imgNames.top
-                , gotViewportOfCmd imgNames.bottom
-                , gotViewportOfCmd imgNames.dropHere
-                , gotViewportOfCmd imgNames.imgSize
+                [ gotViewportOfCmd strings.top
+                , gotViewportOfCmd strings.bottom
+                , gotViewportOfCmd strings.dropHere
+                , gotViewportOfCmd strings.imgSize
                 ]
             )
 
