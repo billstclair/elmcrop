@@ -39,6 +39,25 @@
         const args = cmd.args;
         if (command == 'subImage') {
           var url = "";
+          // https://search.brave.com/search?q=html+copy+part+of+image&source=desktop&conversation=09d7d894bbd405bd7c8f83606a934b4787f1 says:
+          // const img = new Image();
+          // img.src = 'path/to/image.jpg';
+          // img.onload = () => {
+          //   const canvas = document.createElement('canvas');
+          //   const width = 100; // crop width
+          //   const height = 100; // crop height
+          //   
+          //   canvas.width = width;
+          //   canvas.height = height;
+          //   const ctx = canvas.getContext('2d');
+          //   
+          // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+          //   ctx.drawImage(img, 0, 0, width, height, 0, 0, width, height);
+          //   
+          //   canvas.toBlob((blob) => {
+          //     copyImageToClipboard(blob);
+          //   }, 'image/png');
+          // };
           imagesOut.send({ cmd: cmd,
                            url: url
                          });
