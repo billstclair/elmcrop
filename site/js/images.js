@@ -61,7 +61,7 @@
               urlOut = canvas.toDataUrl();
             });
 
-            imagesOut.send({ cmd: cmd,
+            imagesOut.send({ command: cmd,
                              url: url
                            });
           }
