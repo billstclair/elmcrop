@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////
 
 (function(scope) {
-  function initImages(app) {
+  function initImages(app, inPort="imagesIn", outPort="imagesOut") {
     if (!app) {
       console.log("app is not defined.");
       return;
@@ -21,11 +21,11 @@
       return;
     }
 
-    const imagesIn = ports.imagesIn;
-    const imagesOut = ports.imagesOut;
+    const imagesIn = ports[inPort];
+    const imagesOut = ports[outPort];
 
     if (!imagesIn || !imagesOut) {
-      console.log("imagesIn or imagesOut port not defined.");
+      console.log(inPort + " or " + outPort + " port not defined.");
       return;
     }
 
@@ -38,36 +38,39 @@
         const command = cmd.command;
         const args = cmd.args;
         if (command == 'subImage') {
-          var url = "";
+          var url = args.url;
           // https://search.brave.com/search?q=html+copy+part+of+image&source=desktop&conversation=09d7d894bbd405bd7c8f83606a934b4787f1 says:
-          // const img = new Image();
-          // img.src = 'path/to/image.jpg';
-          // img.onload = () => {
-          //   const canvas = document.createElement('canvas');
-          //   const width = 100; // crop width
-          //   const height = 100; // crop height
-          //   
-          //   canvas.width = width;
-          //   canvas.height = height;
-          //   const ctx = canvas.getContext('2d');
-          //   
-          // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
-          //   ctx.drawImage(img, 0, 0, width, height, 0, 0, width, height);
-          //   
-          //   canvas.toBlob((blob) => {
-          //     copyImageToClipboard(blob);
-          //   }, 'image/png');
-          // };
-          imagesOut.send({ cmd: cmd,
-                           url: url
-                         });
+          const img = new Image();
+          img.src = url;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const left = args.left;
+            const right = args.right;
+            const top = args.top
+            const bottom = args.bottom;
+            height = bottom - top;
+            width = right - left;
 
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, left, top, width, height, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              urlOut = canvas.toDataUrl();
+            });
+
+            imagesOut.send({ cmd: cmd,
+                             url: url
+                           });
+          }
         } else {
           console.log("Unknown command: ", command);
         }
-      }
-    });
+      };
+    })
   }
-
   scope.initImages = initImages;
 })(this);   // Execute the enclosing function.
+
